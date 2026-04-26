@@ -2372,34 +2372,14 @@ function handleWatchClick() {
 let playerHideTimer = null;
 let popupBlockTimer = null;
 
-function openFullPlayer() {
+async function openFullPlayer() {
   const {id,type,title}=currentMovie||{};
   if(!id) { console.warn('No current movie'); return; }
 
-  const si = currentServerIndex || 0;
   const servers=type==='tv'?TV_SERVERS:SERVERS;
 
-  // Close modal first
+  // Close modal first, show player with loading state
   document.getElementById('playerModal').classList.remove('open');
-
-  // Build server buttons inside CC panel
-  document.getElementById('ccServerBtns').innerHTML=servers.map((s,i)=>
-    `<button onclick="switchFullServer(${i})" style="background:${i===si?'rgba(124,58,237,0.2)':'rgba(255,255,255,0.05)'};border:1px solid ${i===si?'rgba(124,58,237,0.4)':'rgba(255,255,255,0.1)'};color:#fff;padding:7px 12px;border-radius:6px;cursor:pointer;font-size:0.78rem;font-family:'DM Sans',sans-serif;text-align:left;width:100%;">${s.name}</button>`
-  ).join('');
-
-  // Load iframe
-  document.getElementById('fullPlayerIframe').src=type==='tv'?servers[si].url(id,1,1):servers[si].url(id);
-  window.addEventListener('blur', preventPopup);
-  // Reset fallback state
-  fallbackAttempt = 0;
-  clearTimeout(iframeCheckTimer);
-  document.getElementById('serverFallbackOverlay').style.display = 'none';
-
-  // Set title
-  const titleEl=document.getElementById('playerPageTitle');
-  if(titleEl) titleEl.textContent=title||'';
-
-  // Show player page
   document.getElementById('playerPage').style.display='flex';
   document.body.style.overflow='hidden';
   document.getElementById('subtitlePopup').style.display='none';
@@ -2408,6 +2388,45 @@ function openFullPlayer() {
   document.getElementById('sub-bar').style.width='0%';
   document.getElementById('sub-pct').textContent='0%';
   document.getElementById('sub-btns').style.display='flex';
+
+  // Show "Сервер шалгаж байна..." loading state
+  const iframe = document.getElementById('fullPlayerIframe');
+  iframe.src = '';
+  const overlay = document.getElementById('serverFallbackOverlay');
+  overlay.style.display = 'flex';
+  document.getElementById('fallbackMsg').textContent = '🔍 Хамгийн сайн серверийг хайж байна...';
+  document.getElementById('fallbackSub').textContent = `${servers.length} сервер шалгаж байна — түр хүлээнэ үү`;
+  document.getElementById('fallbackServerBtns').innerHTML = '';
+
+  // Pre-check all servers in parallel
+  let bestIdx = 0;
+  try {
+    bestIdx = await findBestServer(servers, id, type);
+  } catch(e) {
+    bestIdx = 0;
+  }
+
+  // Hide loading overlay
+  overlay.style.display = 'none';
+  currentServerIndex = bestIdx;
+
+  // Build server buttons inside CC panel
+  document.getElementById('ccServerBtns').innerHTML=servers.map((s,i)=>
+    `<button onclick="switchFullServer(${i})" style="background:${i===bestIdx?'rgba(124,58,237,0.2)':'rgba(255,255,255,0.05)'};border:1px solid ${i===bestIdx?'rgba(124,58,237,0.4)':'rgba(255,255,255,0.1)'};color:#fff;padding:7px 12px;border-radius:6px;cursor:pointer;font-size:0.78rem;font-family:'DM Sans',sans-serif;text-align:left;width:100%;">${s.name}</button>`
+  ).join('');
+
+  // Load best server
+  iframe.src = type==='tv' ? servers[bestIdx].url(id,1,1) : servers[bestIdx].url(id);
+  window.addEventListener('blur', preventPopup);
+
+  // Reset fallback state
+  fallbackAttempt = 0;
+  clearTimeout(iframeCheckTimer);
+
+  // Set title
+  const titleEl=document.getElementById('playerPageTitle');
+  if(titleEl) titleEl.textContent=title||'';
+
   const subBtn=document.querySelector('#sub-btns button');
   if(subBtn){subBtn.textContent='Монгол хадмал үүсгэх';subBtn.disabled=false;subBtn.style.opacity='1';}
 
@@ -2416,8 +2435,6 @@ function openFullPlayer() {
 
   // Auto fullscreen
   setTimeout(()=>tryFullscreen(), 600);
-
-  // Subtitle popup after 4s
   setTimeout(()=>{
     if(document.getElementById('playerPage').style.display!=='none'){
       document.getElementById('subtitlePopup').style.display='block';
@@ -2612,6 +2629,24 @@ document.addEventListener('keydown', e => {
 
 // Init watchlist nav button
 updateWlNavBtn();
+// ─── SERVER PRE-CHECK ──────────────────────────────────────
+const CHECK_API = '/api/check-server';
+
+async function checkServer(url) {
+  try {
+    const res = await fetch(`${CHECK_API}?url=${encodeURIComponent(url)}`);
+    const data = await res.json();
+    return data.ok === true;
+  } catch(e) { return false; }
+}
+
+async function findBestServer(servers, id, type, s=1, e=1) {
+  const urls = servers.map(sv => type==='tv' ? sv.url(id,s,e) : sv.url(id));
+  const results = await Promise.all(urls.map(u => checkServer(u)));
+  const best = results.findIndex(ok => ok);
+  return best >= 0 ? best : 0;
+}
+
 let iframeCheckTimer = null;
 let fallbackAttempt = 0;
 const UNAVAILABLE_PHRASES = [
