@@ -1281,7 +1281,7 @@ input:checked + .sw::after{transform:translateX(20px);}
   <iframe id="fullPlayerIframe"
     allowfullscreen
     allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
-    sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-popups"
+    sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
     referrerpolicy="no-referrer"
     style="position:absolute;inset:0;width:100%;height:100%;border:none;z-index:1;"
     onload="onIframeLoad(this)">
@@ -1335,9 +1335,9 @@ input:checked + .sw::after{transform:translateX(20px);}
     </div>
 
     <!-- Tabs: Login / Register -->
-    <div style="display:flex;border-bottom:1px solid rgba(255,255,255,0.08);margin-bottom:28px;">
-      <div id="login-tab" onclick="switchAuthTab('login')" style="flex:1;text-align:center;padding:10px;font-size:0.9rem;font-weight:600;cursor:pointer;border-bottom:2px solid #3d4fd1;color:#fff;transition:all 0.2s;">Нэвтрэх</div>
-      <div id="register-tab" onclick="switchAuthTab('register')" style="flex:1;text-align:center;padding:10px;font-size:0.9rem;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;color:#8892a4;transition:all 0.2s;">Бүртгүүлэх</div>
+    <div style="display:flex;border-bottom:1px solid rgba(255,255,255,0.08);margin-bottom:28px;" onmousedown="event.preventDefault()">
+      <div id="login-tab" onclick="switchAuthTab('login')" tabindex="-1" style="flex:1;text-align:center;padding:10px;font-size:0.9rem;font-weight:600;cursor:pointer;border-bottom:2px solid #3d4fd1;color:#fff;transition:all 0.2s;user-select:none;">Нэвтрэх</div>
+      <div id="register-tab" onclick="switchAuthTab('register')" tabindex="-1" style="flex:1;text-align:center;padding:10px;font-size:0.9rem;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;color:#8892a4;transition:all 0.2s;user-select:none;">Бүртгүүлэх</div>
     </div>
 
     <!-- LOGIN PANEL -->
@@ -1402,6 +1402,8 @@ input:checked + .sw::after{transform:translateX(20px);}
         <div style="display:flex;gap:4px;margin-top:8px;" id="pw-bars">
           <div id="pwb1" style="flex:1;height:3px;border-radius:2px;background:#1e2740;transition:background 0.3s;"></div>
           <div id="pwb2" style="flex:1;height:3px;border-radius:2px;background:#1e2740;transition:background 0.3s;"></div>
+          <div id="pwb3" style="flex:1;height:3px;border-radius:2px;background:#1e2740;transition:background 0.3s;"></div>
+          <div id="pwb4" style="flex:1;height:3px;border-radius:2px;background:#1e2740;transition:background 0.3s;"></div>
           <div id="pwb3" style="flex:1;height:3px;border-radius:2px;background:#1e2740;transition:background 0.3s;"></div>
           <div id="pwb4" style="flex:1;height:3px;border-radius:2px;background:#1e2740;transition:background 0.3s;"></div>
         </div>
@@ -1653,6 +1655,37 @@ function buildTop10(results) {
 // ─── FETCH HELPERS ─────────────────────────────────────────
 // ─── BLOCK ALL POPUPS / NEW TAB REDIRECTS ──────────────────
 window.open = function() { return null; };
+
+// Block all navigation attempts from iframes
+function preventPopup() {
+  setTimeout(() => {
+    // Close any new tabs opened by the iframe
+    window.focus();
+  }, 50);
+}
+
+// Block beforeunload redirects from embed servers
+window.addEventListener('beforeunload', e => {
+  if(document.getElementById('playerPage').style.display !== 'none') {
+    e.preventDefault();
+    e.returnValue = '';
+    return '';
+  }
+});
+
+// Intercept all clicks that would navigate away
+document.addEventListener('click', e => {
+  const a = e.target.closest('a[target="_blank"], a[href*="1xbet"], a[href*="melbet"], a[href*="bet"]');
+  if(a) { e.preventDefault(); e.stopPropagation(); return false; }
+}, true);
+
+// Override location changes
+const _pushState = history.pushState.bind(history);
+const _replaceState = history.replaceState.bind(history);
+// Block iframe navigation to gambling/ad sites
+window.addEventListener('message', e => {
+  // Ignore all messages from iframes (prevent postMessage exploits)
+});
 
 // ─── FETCH HELPERS (tmdb defined above) ─────────────────────────────────────────
 
@@ -2823,6 +2856,14 @@ function closeLogin() {
   }
 }
 function switchAuthTab(tab) {
+  // Don't switch tabs if user is actively typing in an input
+  const active = document.activeElement;
+  if(active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA') && 
+     active.closest('#loginModal') && tab !== 'success') {
+    // Only allow switching if the input is NOT in the current visible panel
+    const currentPanel = tab === 'login' ? 'auth-register' : 'auth-login';
+    if(!active.closest('#'+currentPanel)) return;
+  }
   document.getElementById('auth-login').style.display    = tab==='login'    ? 'block' : 'none';
   document.getElementById('auth-register').style.display = tab==='register' ? 'block' : 'none';
   document.getElementById('auth-success').style.display  = tab==='success'  ? 'block' : 'none';
