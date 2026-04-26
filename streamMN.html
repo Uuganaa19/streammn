@@ -1,0 +1,2726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>StreamMN — Watch Movies & Series</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --navy:#0b0f1a;--navy2:#0e1320;--navy3:#111827;
+  --accent:#f5c518;--blue:#3d4fd1;--red:#E50914;
+  --text:#fff;--muted:#8892a4;--card:#141b2d;--border:#1e2740;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);overflow-x:hidden;}
+a{text-decoration:none;color:inherit;}
+
+/* ===== NAV ===== */
+nav{position:fixed;top:0;left:0;right:0;z-index:200;padding:0 24px;height:62px;display:flex;align-items:center;justify-content:space-between;background:rgba(11,15,26,0.97);border-bottom:1px solid rgba(255,255,255,0.05);}
+.nav-left{display:flex;align-items:center;gap:16px;}
+.logo-wrap{display:flex;align-items:center;gap:8px;cursor:pointer;}
+.logo-icon{width:34px;height:34px;background:linear-gradient(135deg,#3d4fd1,#1a237e);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',cursive;font-size:1.1rem;color:#fff;}
+.logo-text{font-family:'Bebas Neue',cursive;font-size:1.4rem;letter-spacing:2px;color:#fff;}
+.nav-icon-btn{width:34px;height:34px;background:rgba(255,255,255,0.05);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;border:1px solid rgba(255,255,255,0.08);color:#aaa;font-size:0.9rem;transition:all 0.2s;}
+.nav-icon-btn:hover{background:rgba(255,255,255,0.1);color:#fff;}
+.nav-icon-btn.wl-active{background:rgba(245,158,11,0.15);border-color:rgba(245,158,11,0.4);color:#f59e0b;}
+/* Watchlist page */
+#watchlistPage{display:none;position:fixed;inset:0;background:#060810;z-index:200;overflow-y:auto;padding:80px 0 60px;}
+#watchlistPage.open{display:block;}
+.wl-header{max-width:1280px;margin:0 auto;padding:0 40px 24px;display:flex;align-items:center;gap:16px;}
+.wl-title{font-size:1.4rem;font-weight:800;color:#fff;}
+.wl-count{background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);color:#f59e0b;padding:2px 10px;border-radius:20px;font-size:0.75rem;font-weight:700;}
+.wl-close{margin-left:auto;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);color:#aaa;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;transition:all 0.2s;}
+.wl-close:hover{background:rgba(255,255,255,0.15);color:#fff;}
+.wl-grid{max-width:1280px;margin:0 auto;padding:0 40px;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px;}
+.wl-card{cursor:pointer;border-radius:8px;overflow:hidden;position:relative;aspect-ratio:2/3;background:#0e1320;transition:transform 0.2s;}
+.wl-card:hover{transform:scale(1.04);}
+.wl-card img{width:100%;height:100%;object-fit:cover;display:block;}
+.wl-card-info{position:absolute;bottom:0;left:0;right:0;padding:28px 10px 10px;background:linear-gradient(to top,rgba(0,0,0,0.95),transparent);}
+.wl-card-title{font-size:0.78rem;font-weight:700;color:#fff;line-height:1.3;margin-bottom:2px;}
+.wl-card-meta{font-size:0.68rem;color:#8892a4;}
+.wl-remove-btn{position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.7);border:none;color:#f87171;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:0.8rem;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.2s;}
+.wl-card:hover .wl-remove-btn{opacity:1;}
+.wl-empty{text-align:center;padding:80px 20px;color:#4a5568;}
+.wl-empty-icon{font-size:3rem;margin-bottom:16px;}
+/* Bookmark button on cards */
+.btn-bookmark.saved{color:#f59e0b;border-color:#f59e0b;}
+/* Toast for watchlist */
+.wl-toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%);background:#1a2235;border:1px solid rgba(245,158,11,0.3);color:#fff;padding:10px 20px;border-radius:8px;font-size:0.82rem;z-index:9999;display:flex;align-items:center;gap:8px;pointer-events:none;opacity:0;transition:opacity 0.3s;white-space:nowrap;}
+.nav-right{display:flex;align-items:center;gap:12px;}
+.nav-login{display:flex;align-items:center;gap:6px;color:var(--accent);font-size:0.88rem;font-weight:600;cursor:pointer;transition:opacity 0.2s;}
+.nav-login:hover{opacity:0.8;}
+.nav-menu-btn{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:6px 12px;cursor:pointer;color:#aaa;font-size:0.85rem;transition:all 0.2s;}
+.nav-menu-btn:hover{background:rgba(255,255,255,0.1);color:#fff;}
+
+/* Search dropdown — positioned relative to .big-search, not fixed */
+/* ── INLINE SEARCH RESULTS (MNFlix style) ── */
+#searchResults{display:none;width:100%;max-width:1280px;padding:0 40px;margin-top:32px;align-self:center;}
+#searchResults.open{display:block;}
+.sr-label{display:flex;align-items:center;gap:8px;font-size:0.72rem;font-weight:800;letter-spacing:2px;color:#8892a4;text-transform:uppercase;margin-bottom:20px;}
+.sr-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;}
+@media(max-width:1100px){.sr-grid{grid-template-columns:repeat(5,1fr);}}
+@media(max-width:860px){.sr-grid{grid-template-columns:repeat(4,1fr);}}
+@media(max-width:600px){.sr-grid{grid-template-columns:repeat(3,1fr);}}
+.sr-card{cursor:pointer;border-radius:8px;overflow:hidden;position:relative;background:#0e1320;}
+.sr-card-poster{width:100%;aspect-ratio:2/3;object-fit:cover;display:block;transition:transform 0.25s;}
+.sr-card:hover .sr-card-poster{transform:scale(1.04);}
+.sr-card-no-poster{aspect-ratio:2/3;background:#141b2d;display:flex;align-items:center;justify-content:center;font-size:2.5rem;color:#2a3550;}
+.sr-card-bm{position:absolute;top:8px;left:8px;width:30px;height:30px;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);border-radius:50%;border:none;color:#fff;font-size:0.8rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.2s;}
+.sr-card-bm:hover,.sr-card-bm.saved{background:rgba(245,158,11,0.8);color:#fff;}
+.sr-card-info{padding:8px 4px 4px;}
+.sr-card-title{font-size:0.8rem;font-weight:700;color:#fff;line-height:1.3;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sr-card-meta{font-size:0.68rem;color:#8892a4;display:flex;align-items:center;gap:4px;}
+.sr-card-dot{width:3px;height:3px;border-radius:50%;background:#4a5568;}
+.sr-no-result{text-align:center;padding:48px 20px;color:#4a5568;}
+.sr-skel-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;}
+.sr-skel{aspect-ratio:2/3;border-radius:8px;background:linear-gradient(90deg,#0e1320 25%,#161f35 50%,#0e1320 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;}
+.sr-item{display:flex;gap:10px;padding:10px 14px;cursor:pointer;transition:background 0.15s;align-items:center;}
+.sr-item:hover{background:#141b2d;}
+.sr-thumb{width:40px;height:58px;border-radius:4px;object-fit:cover;flex-shrink:0;}
+.sr-info .sr-title{font-size:0.85rem;font-weight:500;}
+.sr-info .sr-meta{font-size:0.72rem;color:var(--muted);margin-top:2px;}
+
+/* ===== HERO / SEARCH SECTION ===== */
+.hero{position:relative;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;padding-top:62px;}
+.hero-bg{position:absolute;inset:0;background-size:cover;background-position:center 20%;background-repeat:no-repeat;transition:opacity 1.5s ease;z-index:0;}
+.hero-bg-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(6,8,16,0.2) 0%,rgba(6,8,16,0.05) 25%,rgba(6,8,16,0.5) 65%,rgba(6,8,16,1) 100%),linear-gradient(to right,rgba(6,8,16,0.85) 0%,rgba(6,8,16,0.4) 50%,transparent 100%);z-index:1;pointer-events:none;}
+.hero-particles{position:absolute;inset:0;pointer-events:none;z-index:0;}
+.hero-icons{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:1;}
+.hero-icon{position:absolute;opacity:0.03;font-size:2rem;animation:floatIcon 8s ease-in-out infinite;}
+@keyframes floatIcon{0%,100%{transform:translateY(0) rotate(0deg);}50%{transform:translateY(-20px) rotate(10deg);}}
+/* Netflix-style left content */
+.hero-content{position:relative;z-index:2;width:100%;max-width:1280px;padding:0 48px;display:flex;flex-direction:column;align-items:flex-start;}
+.hero-movie-info{display:none;flex-direction:column;align-items:flex-start;text-align:left;max-width:560px;margin-bottom:32px;}
+.hero-movie-info.visible{display:flex;}
+.hero-movie-badge{display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+.hero-movie-year{background:rgba(255,255,255,0.15);backdrop-filter:blur(4px);padding:3px 10px;border-radius:4px;font-size:0.72rem;font-weight:700;letter-spacing:1px;}
+.hero-movie-rating{display:flex;align-items:center;gap:4px;font-size:0.8rem;color:#f59e0b;font-weight:700;}
+.hero-movie-genres{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;}
+.hero-movie-genre-tag{background:rgba(255,255,255,0.1);backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,0.15);padding:2px 10px;border-radius:20px;font-size:0.68rem;color:rgba(255,255,255,0.8);}
+.hero-movie-title{font-size:3.2rem;font-weight:900;line-height:1.05;margin-bottom:14px;color:#fff;text-shadow:0 2px 30px rgba(0,0,0,0.9);letter-spacing:-1.5px;}
+.hero-movie-desc{font-size:0.9rem;color:rgba(255,255,255,0.8);line-height:1.65;margin-bottom:22px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;text-shadow:0 1px 8px rgba(0,0,0,0.8);}
+.hero-movie-btns{display:flex;gap:10px;flex-wrap:wrap;}
+.hero-watch-btn{background:#fff;color:#000;border:none;padding:11px 28px;border-radius:6px;font-size:0.9rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px;transition:background 0.2s;font-family:'DM Sans',sans-serif;}
+.hero-watch-btn:hover{background:#ddd;}
+.hero-info-btn{background:rgba(109,109,110,0.7);backdrop-filter:blur(8px);color:#fff;border:none;padding:11px 28px;border-radius:6px;font-size:0.9rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px;transition:background 0.2s;font-family:'DM Sans',sans-serif;}
+.hero-info-btn:hover{background:rgba(109,109,110,0.9);}
+/* Search section */
+.hero-search-section{position:relative;z-index:2;width:100%;max-width:800px;text-align:center;padding:0 20px;align-self:center;}
+.hero-title{font-size:2.2rem;font-weight:700;margin-bottom:28px;line-height:1.3;letter-spacing:-0.5px;text-shadow:0 2px 20px rgba(0,0,0,0.6);}
+/* Progress dots */
+.hero-dots{position:absolute;bottom:28px;right:48px;display:flex;gap:5px;z-index:5;}
+.hero-dot{width:24px;height:3px;border-radius:2px;background:rgba(255,255,255,0.3);cursor:pointer;transition:all 0.3s;}
+.hero-dot.active{background:#fff;width:32px;}
+/* Hero fade animation */
+@keyframes heroFadeIn{from{opacity:0;transform:translateX(-20px);}to{opacity:1;transform:translateX(0);}}
+
+/* Big search bar */
+.big-search{position:relative;width:100%;max-width:580px;margin:0 auto 32px;}
+.big-search-input{width:100%;background:rgba(255,255,255,0.07);border:1.5px solid rgba(255,255,255,0.12);border-radius:40px;padding:16px 56px 16px 24px;color:#fff;font-size:1rem;font-family:'DM Sans',sans-serif;outline:none;transition:border-color 0.2s;backdrop-filter:blur(8px);}
+.big-search-input::placeholder{color:rgba(255,255,255,0.3);}
+.big-search-input:focus{border-color:rgba(61,79,209,0.6);background:rgba(255,255,255,0.09);}
+.big-search-icon{position:absolute;left:20px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,0.3);font-size:1.1rem;pointer-events:none;}
+.big-search-btn{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:var(--blue);border:none;color:#fff;width:38px;height:38px;border-radius:50%;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:background 0.2s;}
+.big-search-btn:hover{background:#2f3db8;}
+
+/* Content type tabs */
+.content-tabs{display:flex;gap:0;border-bottom:1px solid rgba(255,255,255,0.08);margin-bottom:0;width:100%;max-width:400px;margin:0 auto;}
+.ctab{padding:10px 28px;font-size:0.95rem;font-weight:500;color:rgba(255,255,255,0.4);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;white-space:nowrap;}
+.ctab:hover{color:rgba(255,255,255,0.7);}
+.ctab.active{color:#fff;border-bottom-color:var(--blue);}
+.ctab.active-first{color:var(--blue);border-bottom-color:var(--blue);}
+
+/* View more link */
+.view-more-row{width:100%;padding:16px 5% 0;display:flex;align-items:center;}
+.view-more-link{font-size:0.88rem;color:rgba(255,255,255,0.4);cursor:pointer;display:flex;align-items:center;gap:5px;transition:color 0.2s;}
+.view-more-link:hover{color:#fff;}
+
+/* ===== SECTIONS ===== */
+.section{padding:40px 5%;}
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.section-title{font-family:'Bebas Neue',cursive;font-size:1.6rem;letter-spacing:1px;display:flex;align-items:center;gap:10px;}
+.section-title .sticon{font-size:1.1rem;}
+.see-all-btn{font-size:0.8rem;color:var(--muted);border:1px solid #2a2a2a;padding:5px 14px;border-radius:3px;cursor:pointer;transition:all 0.2s;background:none;}
+.see-all-btn:hover{color:#fff;border-color:#555;}
+
+/* ===== HORIZONTAL SCROLL ROW ===== */
+.hrow{display:flex;gap:12px;overflow-x:auto;padding-bottom:10px;scrollbar-width:thin;scrollbar-color:#2a2a2a transparent;}
+.hrow::-webkit-scrollbar{height:4px;}
+.hrow::-webkit-scrollbar-track{background:transparent;}
+.hrow::-webkit-scrollbar-thumb{background:#2a2a2a;border-radius:2px;}
+
+/* ===== HERO DOTS (unused) ===== */
+.hdot{display:none;}
+
+/* ===== MOVIE CARD ===== */
+.mcard{flex-shrink:0;width:148px;cursor:pointer;border-radius:7px;overflow:hidden;background:var(--card);border:1px solid transparent;transition:border-color 0.25s,transform 0.25s;}
+.mcard:hover{border-color:rgba(61,79,209,0.6);transform:translateY(-4px);}
+.mcard-thumb{position:relative;aspect-ratio:2/3;overflow:hidden;}
+.mcard-thumb img{width:100%;height:100%;object-fit:cover;display:block;transition:transform 0.35s;}
+.mcard:hover .mcard-thumb img{transform:scale(1.06);}
+.mcard-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.95) 0%,transparent 55%);opacity:0;transition:opacity 0.25s;display:flex;flex-direction:column;justify-content:flex-end;padding:10px;}
+.mcard:hover .mcard-overlay{opacity:1;}
+.mcard-play{width:36px;height:36px;background:var(--blue);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:6px;}
+.ptri{width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent;border-left:10px solid #fff;margin-left:2px;}
+.mcard-title-ov{font-size:0.78rem;font-weight:600;}
+.mcard-meta-ov{font-size:0.68rem;color:var(--muted);margin-top:2px;}
+.mcard-badge{position:absolute;top:7px;left:7px;font-size:0.6rem;font-weight:700;padding:2px 6px;border-radius:2px;letter-spacing:1px;}
+.badge-new{background:var(--blue);color:#fff;}
+.badge-top{background:#f5a623;color:#000;}
+.badge-4k{background:#1D9E75;color:#fff;}
+.mcard-info{padding:8px 9px 10px;}
+.mcard-name{font-size:0.8rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mcard-year{font-size:0.7rem;color:#555;margin-top:2px;display:flex;gap:5px;align-items:center;}
+.mcard-rating{color:#f5a623;}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(0.8)}}
+
+/* ===== WIDE CARD (landscape) ===== */
+.wcard{flex-shrink:0;width:260px;cursor:pointer;border-radius:7px;overflow:hidden;background:var(--card);border:1px solid transparent;transition:all 0.25s;}
+.wcard:hover{border-color:rgba(61,79,209,0.6);transform:translateY(-4px);}
+.wcard-thumb{position:relative;aspect-ratio:16/9;overflow:hidden;}
+.wcard-thumb img{width:100%;height:100%;object-fit:cover;display:block;transition:transform 0.35s;}
+.wcard:hover .wcard-thumb img{transform:scale(1.05);}
+.wcard-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.25s;}
+.wcard:hover .wcard-overlay{opacity:1;}
+.wcard-play{width:44px;height:44px;background:var(--blue);border-radius:50%;display:flex;align-items:center;justify-content:center;}
+.wcard-info{padding:9px 10px 11px;}
+.wcard-title{font-size:0.85rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.wcard-meta{font-size:0.72rem;color:#555;margin-top:2px;}
+
+/* ===== CATEGORIES ===== */
+.cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;}
+.cat-card{background:var(--card);border-radius:8px;padding:18px 10px;text-align:center;cursor:pointer;border:1px solid var(--border);transition:all 0.2s;}
+.cat-card:hover{background:#1a2235;border-color:rgba(61,79,209,0.5);}
+.cat-icon{font-size:1.6rem;margin-bottom:7px;}
+.cat-name{font-size:0.8rem;font-weight:500;}
+.cat-count{font-size:0.68rem;color:#555;margin-top:2px;}
+
+/* ===== DETAIL MODAL (MNFlix style) ===== */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px;overflow-y:auto;}
+.modal-overlay.open{display:flex;}
+.modal-box{background:#141414;border-radius:12px;overflow:hidden;width:100%;max-width:900px;position:relative;box-shadow:0 40px 80px rgba(0,0,0,0.8);}
+
+/* Close btn */
+.modal-close{position:absolute;top:14px;right:14px;z-index:20;background:rgba(20,20,20,0.85);border:none;color:#fff;width:38px;height:38px;border-radius:50%;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;transition:background 0.2s;backdrop-filter:blur(4px);}
+.modal-close:hover{background:rgba(60,60,60,0.9);}
+
+/* Backdrop hero */
+.modal-backdrop{position:relative;width:100%;aspect-ratio:16/7;overflow:hidden;min-height:260px;}
+.modal-backdrop-img{width:100%;height:100%;object-fit:cover;object-position:center top;display:block;}
+.modal-backdrop-grad{position:absolute;inset:0;background:linear-gradient(to top,#141414 0%,rgba(20,20,20,0.5) 50%,rgba(0,0,0,0.15) 100%);}
+.modal-backdrop-title{position:absolute;bottom:20px;left:28px;right:60px;}
+.modal-backdrop-title h2{font-family:'Bebas Neue',cursive;font-size:4rem;line-height:0.95;letter-spacing:1px;text-shadow:0 2px 20px rgba(0,0,0,0.8);}
+.modal-rating-row{display:flex;align-items:center;gap:10px;margin-top:8px;}
+.tmdb-badge{display:inline-flex;align-items:center;gap:5px;background:#01b4e4;color:#000;font-size:0.7rem;font-weight:700;padding:3px 8px;border-radius:3px;}
+.tmdb-badge-inner{display:flex;flex-direction:column;line-height:1;}
+.tmdb-badge-top{font-size:0.5rem;letter-spacing:1px;}
+.tmdb-badge-bot{font-size:0.7rem;font-weight:900;}
+.modal-score{font-size:0.9rem;font-weight:600;color:#fff;}
+.modal-votecount{font-size:0.78rem;color:#888;}
+.modal-year-pill{font-size:0.82rem;color:#aaa;padding-left:4px;}
+
+/* Body */
+.modal-body{padding:0 28px 24px;}
+
+/* Action row */
+.modal-actions{display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap;}
+.btn-watch{background:#3d4fd1;color:#fff;padding:10px 24px;border-radius:6px;font-size:0.9rem;font-weight:600;border:none;cursor:pointer;display:flex;align-items:center;gap:8px;transition:background 0.2s;}
+.btn-watch:hover{background:#2f3db8;}
+.btn-watch svg{width:16px;height:16px;}
+.btn-bookmark{background:transparent;border:1px solid #333;color:#aaa;width:38px;height:38px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1rem;transition:all 0.2s;}
+.btn-bookmark:hover{border-color:#fff;color:#fff;}
+.btn-share{background:transparent;border:1px solid #333;color:#aaa;width:38px;height:38px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1rem;transition:all 0.2s;}
+.btn-share:hover{border-color:#fff;color:#fff;}
+.playlist-select{background:#1a1a1a;border:1px solid #2a2a2a;color:#888;padding:8px 16px;border-radius:6px;font-size:0.82rem;font-family:'DM Sans',sans-serif;cursor:pointer;margin-left:auto;outline:none;}
+
+/* Two-col layout */
+.modal-cols{display:grid;grid-template-columns:1fr 220px;gap:24px;}
+@media(max-width:600px){.modal-cols{grid-template-columns:1fr;}}
+
+.modal-desc-text{font-size:0.88rem;color:#ccc;line-height:1.65;margin-bottom:16px;}
+.modal-genre-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px;}
+.genre-tag{background:#1e1e1e;border:1px solid #2a2a2a;color:#aaa;font-size:0.78rem;padding:4px 12px;border-radius:20px;}
+
+/* Detail list right */
+.modal-detail-list{display:flex;flex-direction:column;gap:10px;}
+.mdl-row{font-size:0.82rem;line-height:1.4;}
+.mdl-label{color:#555;margin-bottom:2px;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.5px;}
+.mdl-val{color:#ccc;}
+.badge-row{display:flex;gap:8px;align-items:center;margin-top:4px;}
+.tmdb-logo-badge{background:#01b4e4;color:#000;font-size:0.65rem;font-weight:900;padding:4px 8px;border-radius:3px;letter-spacing:0.5px;}
+.imdb-logo-badge{background:#f5c518;color:#000;font-size:0.65rem;font-weight:900;padding:4px 8px;border-radius:3px;letter-spacing:0.5px;}
+
+/* Server / player section */
+.server-section{margin-top:20px;border-top:1px solid #1e1e1e;padding-top:16px;}
+.server-label{font-size:0.72rem;color:#555;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;}
+.server-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+.server-btn{background:#1a1a1a;border:1px solid #2a2a2a;color:var(--muted);padding:7px 16px;border-radius:5px;font-size:0.8rem;cursor:pointer;transition:all 0.2s;}
+.server-btn:hover,.server-btn.active{background:rgba(61,79,209,0.2);border-color:#3d4fd1;color:#fff;}
+
+/* Player embed */
+.player-wrap{position:relative;aspect-ratio:16/9;background:#000;border-radius:8px;overflow:hidden;}
+.player-wrap iframe{width:100%;height:100%;border:none;display:block;}
+.player-placeholder{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:#0a0a0a;cursor:pointer;}
+.player-placeholder:hover .pp-play{background:#3d4fd1;}
+.pp-play{width:64px;height:64px;background:rgba(61,79,209,0.8);border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background 0.2s;}
+.pp-tri{width:0;height:0;border-top:12px solid transparent;border-bottom:12px solid transparent;border-left:22px solid #fff;margin-left:4px;}
+.pp-text{font-size:0.85rem;color:#666;}
+
+/* ===== GENRE TABS ===== */
+.genre-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;}
+.gtab{background:var(--card);border:1px solid var(--border);color:var(--muted);font-size:0.8rem;padding:6px 14px;border-radius:20px;cursor:pointer;transition:all 0.2s;}
+.gtab:hover,.gtab.active{background:rgba(229,9,20,0.12);border-color:var(--red);color:#fff;}
+
+/* ===== FOOTER ===== */
+footer{background:#000;padding:36px 5% 20px;border-top:1px solid #111;margin-top:20px;}
+.footer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:20px;margin-bottom:28px;}
+.footer-col h4{font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#fff;margin-bottom:12px;}
+.footer-col a{display:block;color:#555;font-size:0.8rem;margin-bottom:7px;transition:color 0.2s;cursor:pointer;}
+.footer-col a:hover{color:#ccc;}
+.footer-bottom{border-top:1px solid #111;padding-top:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+.footer-logo{font-family:'Bebas Neue',cursive;font-size:1.5rem;color:var(--red);}
+.footer-copy{font-size:0.75rem;color:#333;}
+
+/* Toggle switch thumb */
+.sw::after{content:'';position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:3px;left:3px;transition:transform 0.3s;}
+input:checked + .sw::after{transform:translateX(20px);}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(0.8)}}
+
+/* ===== LOADING ===== */.spinner{display:inline-block;width:20px;height:20px;border:2px solid #333;border-top-color:var(--red);border-radius:50%;animation:spin 0.7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-row{display:flex;gap:12px;overflow:hidden;}
+.skeleton-card{flex-shrink:0;width:150px;border-radius:6px;overflow:hidden;}
+.skeleton-thumb{aspect-ratio:2/3;background:var(--card);animation:shimmer 1.4s infinite;background-size:200% 100%;background-image:linear-gradient(90deg,#1a1a1a 25%,#222 50%,#1a1a1a 75%);}
+.skeleton-line{height:10px;border-radius:4px;margin-top:8px;background:linear-gradient(90deg,#1a1a1a 25%,#222 50%,#1a1a1a 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;}
+.skeleton-line.short{width:60%;}
+
+/* ===== TOP 10 ===== */
+.top10-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;}
+.t10{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:6px;padding:10px;cursor:pointer;border:1px solid transparent;transition:border-color 0.2s;}
+.t10:hover{border-color:var(--red);}
+.t10-num{font-family:'Bebas Neue',cursive;font-size:2.2rem;width:32px;text-align:center;flex-shrink:0;color:#252525;line-height:1;}
+.t10:nth-child(1) .t10-num{color:rgba(229,9,20,0.35);}
+.t10:nth-child(2) .t10-num{color:rgba(245,166,35,0.35);}
+.t10:nth-child(3) .t10-num{color:rgba(29,158,117,0.3);}
+.t10-thumb{width:50px;height:72px;border-radius:4px;object-fit:cover;flex-shrink:0;}
+.t10-title{font-size:0.85rem;font-weight:500;margin-bottom:3px;}
+.t10-meta{font-size:0.72rem;color:#555;}
+.t10-rating{font-size:0.75rem;color:#f5a623;margin-top:3px;}
+
+/* ===== NOTIFICATION ===== */
+.notif{position:fixed;bottom:24px;right:24px;background:#1f1f1f;border:1px solid #333;border-radius:8px;padding:14px 18px;font-size:0.85rem;color:#ccc;z-index:500;transform:translateY(80px);opacity:0;transition:all 0.3s;max-width:300px;}
+.notif.show{transform:translateY(0);opacity:1;}
+.notif strong{color:#fff;display:block;margin-bottom:3px;}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="navbar">
+  <div class="nav-left">
+    <div class="logo-wrap">
+      <div class="logo-icon">S</div>
+      <div class="logo-text">StreamMN</div>
+    </div>
+    <div class="nav-icon-btn" title="Facebook">f</div>
+    <div class="nav-icon-btn" id="wlNavBtn" title="Watchlist" onclick="openWatchlist()">★</div>
+    <div class="nav-icon-btn" title="Notifications">🔔</div>
+  </div>
+  <div class="nav-right">
+    <div id="nav-login-btn" class="nav-login" onclick="openLogin()">✨ Нэвтрэх</div>
+    <div id="nav-account-btn" style="display:none;position:relative;">
+      <div onclick="toggleAccountMenu()" style="display:flex;align-items:center;gap:8px;cursor:pointer;color:var(--accent);font-size:0.88rem;font-weight:600;padding:6px 10px;border-radius:6px;transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='transparent'">
+        <div id="nav-avatar" style="width:28px;height:28px;background:linear-gradient(135deg,#3d4fd1,#1a237e);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;">?</div>
+        ⚡ Гишүүнчлэл
+        <span id="acc-chevron" style="font-size:0.7rem;transition:transform 0.2s;">∧</span>
+      </div>
+      <!-- Dropdown -->
+      <div id="account-dropdown" style="display:none;position:absolute;top:calc(100% + 8px);right:0;width:220px;background:#111827;border:1px solid rgba(255,255,255,0.08);border-radius:10px;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,0.7);z-index:500;">
+        <div style="padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.06);">
+          <div id="dd-email" style="font-size:0.82rem;color:#aaa;"></div>
+        </div>
+        <div onclick="openSettings('account');closeAccountMenu();" style="display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;font-size:0.88rem;transition:background 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">👤 Account</div>
+        <div onclick="openSettings('preferences');closeAccountMenu();" style="display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;font-size:0.88rem;transition:background 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">⚙️ Тохиргоо</div>
+        <div onclick="openAbout();closeAccountMenu();" style="display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;font-size:0.88rem;transition:background 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">❓ Бидний тухай</div>
+        <div onclick="closeAccountMenu()" style="display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;font-size:0.88rem;transition:background 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">🎬 Киноны портфолио</div>
+        <div style="border-top:1px solid rgba(255,255,255,0.06);"></div>
+        <div onclick="doLogout()" style="display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;font-size:0.88rem;color:#e50914;transition:background 0.15s;" onmouseover="this.style.background='rgba(229,9,20,0.08)'" onmouseout="this.style.background='transparent'">↩ Гарах</div>
+        <div style="padding:12px 16px;border-top:1px solid rgba(255,255,255,0.06);display:flex;justify-content:center;">
+          <div style="width:32px;height:32px;background:rgba(255,255,255,0.06);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:0.85rem;">f</div>
+        </div>
+      </div>
+    </div>
+    <div class="nav-menu-btn" onclick="toggleAccountMenu()">☰ ∨</div>
+  </div>
+</nav>
+
+<!-- ─── WATCHLIST PAGE ─── -->
+<div id="watchlistPage">
+  <div class="wl-header">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <span style="font-size:1.4rem;">★</span>
+      <span class="wl-title">Миний жагсаалт</span>
+      <span class="wl-count" id="wlCount">0</span>
+    </div>
+    <button class="wl-close" onclick="closeWatchlist()">✕</button>
+  </div>
+  <div id="watchlistGrid"></div>
+</div>
+<div class="wl-toast" id="wlToast"></div>
+
+<!-- HERO — MNFlix style: centered search -->
+<div class="hero" id="hero">
+  <!-- Background image -->
+  <div class="hero-bg" id="heroBg"></div>
+  <div class="hero-bg-overlay"></div>
+  <div class="hero-particles"></div>
+  <div class="hero-icons" id="heroIcons"></div>
+
+  <div class="hero-content">
+    <!-- Movie info (Netflix style) — shown when backdrop loads -->
+    <div class="hero-movie-info" id="heroMovieInfo">
+      <div class="hero-movie-badge">
+        <span class="hero-movie-year" id="heroYear"></span>
+        <span class="hero-movie-rating" id="heroRating"></span>
+      </div>
+      <div class="hero-movie-genres" id="heroGenres"></div>
+      <h1 class="hero-movie-title" id="heroMovieTitle"></h1>
+      <p class="hero-movie-desc" id="heroMovieDesc"></p>
+      <div class="hero-movie-btns">
+        <button class="hero-watch-btn" id="heroWatchBtn">▶ Үзэх</button>
+        <button class="hero-info-btn" id="heroInfoBtn">ℹ Дэлгэрэнгүй</button>
+      </div>
+    </div>
+
+    <!-- Search section (always visible) -->
+    <div class="hero-search-section">
+      <h1 class="hero-title" id="heroTitle">Та өнөө орой юу үзмээр байна?</h1>
+      <div class="big-search">
+        <span class="big-search-icon">🔍</span>
+        <input class="big-search-input" id="bigSearchInput" placeholder="Юу үзмээр байна?" oninput="doSearch(this.value)" onkeydown="if(event.key==='Enter')doSearch(this.value)"/>
+        <button class="big-search-clear" id="searchClearBtn" onclick="clearSearch()" style="display:none;background:none;border:none;color:#8892a4;cursor:pointer;font-size:1rem;padding:0 8px;">✕</button>
+        <div class="search-results-dropdown" id="searchDropdown"></div>
+      </div>
+      <!-- Tabs: Кино · Цуврал · Насанд хүрэгчид -->
+      <div class="content-tabs" id="contentTabs">
+        <div class="ctab active" id="tab-movie" onclick="switchContentTab('movie',this)">Кино</div>
+        <div class="ctab" id="tab-tv" onclick="switchContentTab('tv',this)">Цуврал</div>
+        <div class="ctab" id="tab-18" onclick="switchContentTab('18',this)">Насанд хүрэгчид (18+)</div>
+      </div>
+    </div>
+
+    <!-- Inline search results (MNFlix style) -->
+    <div id="searchResults">
+      <div class="sr-label"><span>🔍</span><span>ХАЙЛТЫН ҮР ДҮН</span></div>
+      <div id="srGrid"></div>
+    </div>
+  </div>
+
+  <!-- View more -->
+  <div class="view-more-row">
+    <div class="view-more-link" onclick="document.getElementById('sec-trending').scrollIntoView({behavior:'smooth'})">
+      Дэлгэрэнгүй үзэх →
+    </div>
+  </div>
+  <div class="hero-dots" id="heroDots"></div>
+</div>
+
+<!-- TRENDING -->
+<div class="section" id="sec-trending">
+  <div class="section-head">
+    <div class="section-title"><span class="sticon">🔥</span> Тренд болж буй</div>
+    <button class="see-all-btn" onclick="loadAllRows()">Дахин ачаалах ↺</button>
+  </div>
+  <div class="hrow" id="row-trending"><div style="padding:20px;color:#555;font-size:0.85rem;display:flex;align-items:center;gap:10px;"><span style="animation:spin 1s linear infinite;display:inline-block;">⟳</span> Ачааллаж байна...</div></div>
+</div>
+
+<!-- TOP 10 -->
+<div class="section">
+  <div class="section-head">
+    <div class="section-title"><span class="sticon">🏆</span> Энэ 7 хоногийн Топ 10</div>
+  </div>
+  <div class="top10-grid" id="top10-grid"></div>
+</div>
+
+<!-- POPULAR MOVIES -->
+<div class="section">
+  <div class="section-head">
+    <div class="section-title"><span class="sticon">🎬</span> Алдартай Кинонууд</div>
+    <button class="see-all-btn" onclick="switchContentTab('movie',document.getElementById('tab-movie'))">Бүгдийг үзэх</button>
+  </div>
+  <div class="hrow" id="row-movies"></div>
+</div>
+
+<!-- POPULAR TV -->
+<div class="section">
+  <div class="section-head">
+    <div class="section-title"><span class="sticon">📺</span> Алдартай Цувралууд</div>
+    <button class="see-all-btn" onclick="switchContentTab('tv',document.getElementById('tab-tv'))">Бүгдийг үзэх</button>
+  </div>
+  <div class="hrow" id="row-tv"></div>
+</div>
+
+<!-- NOW PLAYING -->
+<div class="section">
+  <div class="section-head">
+    <div class="section-title"><span class="sticon">▶️</span> Одоо Кино Театрт</div>
+  </div>
+  <div class="hrow" id="row-nowplaying"></div>
+</div>
+
+<!-- CATEGORIES -->
+<div class="section">
+  <div class="section-head">
+    <div class="section-title"><span class="sticon">🎭</span> Төрлөөр үзэх</div>
+  </div>
+  <div class="cat-grid">
+    <div class="cat-card" onclick="filterGenre(28,'Action')"><div class="cat-icon">⚔️</div><div class="cat-name">Action</div></div>
+    <div class="cat-card" onclick="filterGenre(18,'Drama')"><div class="cat-icon">🎭</div><div class="cat-name">Drama</div></div>
+    <div class="cat-card" onclick="filterGenre(35,'Comedy')"><div class="cat-icon">😂</div><div class="cat-name">Comedy</div></div>
+    <div class="cat-card" onclick="filterGenre(27,'Horror')"><div class="cat-icon">😱</div><div class="cat-name">Horror</div></div>
+    <div class="cat-card" onclick="filterGenre(10749,'Romance')"><div class="cat-icon">💕</div><div class="cat-name">Romance</div></div>
+    <div class="cat-card" onclick="filterGenre(878,'Sci-Fi')"><div class="cat-icon">🚀</div><div class="cat-name">Sci-Fi</div></div>
+    <div class="cat-card" onclick="filterGenre(12,'Adventure')"><div class="cat-icon">🏔️</div><div class="cat-name">Adventure</div></div>
+    <div class="cat-card" onclick="filterGenre(99,'Documentary')"><div class="cat-icon">📽️</div><div class="cat-name">Documentary</div></div>
+    <div class="cat-card" onclick="filterGenre(16,'Animation')"><div class="cat-icon">🎨</div><div class="cat-name">Animation</div></div>
+    <div class="cat-card" onclick="filterGenre(53,'Thriller')"><div class="cat-icon">🔪</div><div class="cat-name">Thriller</div></div>
+    <div class="cat-card" onclick="filterGenre(14,'Fantasy')"><div class="cat-icon">🧙</div><div class="cat-name">Fantasy</div></div>
+    <div class="cat-card" onclick="filterGenre(36,'History')"><div class="cat-icon">🏛️</div><div class="cat-name">History</div></div>
+  </div>
+</div>
+
+<!-- GENRE SECTION (dynamic) -->
+<div class="section" id="genre-section" style="display:none;">
+  <div class="section-head">
+    <div class="section-title" id="genre-title">Genre</div>
+  </div>
+  <div class="genre-tabs" id="genre-tabs"></div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:12px;" id="genre-grid"></div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-grid">
+    <div class="footer-col">
+      <div class="footer-logo">STREAM<span style="color:#fff;font-family:'Bebas Neue',cursive;">MN</span></div>
+      <p style="font-size:0.78rem;color:#444;margin-top:10px;line-height:1.5;">Mongolia's streaming platform. Powered by TMDB.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Navigate</h4>
+      <a>Home</a><a>Movies</a><a>Series</a><a>Live TV</a><a>Kids</a>
+    </div>
+    <div class="footer-col">
+      <h4>Help</h4>
+      <a>FAQ</a><a>Contact Us</a><a>Account</a><a>Media Center</a>
+    </div>
+    <div class="footer-col">
+      <h4>Legal</h4>
+      <a>Privacy Policy</a><a>Terms of Use</a><a>Cookie Preferences</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div style="font-size:0.72rem;color:#333;">© 2026 StreamMN · Ulaanbaatar, Mongolia</div>
+    <div class="footer-copy">Movie data provided by <span style="color:#555;">TMDB</span></div>
+  </div>
+</footer>
+
+<!-- DETAIL MODAL (MNFlix style) -->
+<div class="modal-overlay" id="playerModal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closePlayer()">✕</button>
+
+    <!-- Backdrop with title -->
+    <div class="modal-backdrop">
+      <img class="modal-backdrop-img" id="modalBackdrop" src="" alt=""/>
+      <div class="modal-backdrop-grad"></div>
+      <div class="modal-backdrop-title">
+        <h2 id="modalTitle">Loading...</h2>
+        <div class="modal-rating-row">
+          <div class="tmdb-badge">
+            <div class="tmdb-badge-inner">
+              <span class="tmdb-badge-top">TM</span>
+              <span class="tmdb-badge-bot">DB</span>
+            </div>
+          </div>
+          <span class="modal-score" id="modalScore">—</span>
+          <span class="modal-votecount" id="modalVotes"></span>
+          <span class="modal-year-pill">•</span>
+          <span class="modal-year-pill" id="modalYear">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="modal-body">
+
+      <!-- Action buttons -->
+      <div class="modal-actions">
+        <button class="btn-watch" id="watchBtn" onclick="handleWatchClick()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span id="watchBtnLabel">Гишүүнчлэл</span>
+        </button>
+        <button class="btn-bookmark" id="modalBookmarkBtn" title="Watchlist-д нэмэх" onclick="toggleWatchlist()">🔖</button>
+        <button class="btn-share" title="Share" onclick="showNotif('Share','Линк хуулагдлаа!')">↗</button>
+        <select class="playlist-select"><option>Булэгт нэмэх</option><option>Дуртай киnonуудын жагсаалт</option><option>Дараа үзэх</option></select>
+      </div>
+
+      <!-- Two column layout -->
+      <div class="modal-cols">
+        <!-- Left: description + genres -->
+        <div>
+          <p class="modal-desc-text" id="modalDesc">Loading...</p>
+          <div class="modal-genre-tags" id="modalGenres"></div>
+
+          <!-- Server section — shows servers, play opens full player page -->
+          <div class="server-section">
+            <div class="server-label">Серверүүд</div>
+            <div class="server-row" id="serverRow"></div>
+            <!-- Play button area — no embedded iframe in modal -->
+            <div class="player-wrap" id="playerWrap" onclick="handleWatchClick()" style="cursor:pointer;">
+              <div class="player-placeholder" id="playerPlaceholder">
+                <div class="pp-play"><div class="pp-tri"></div></div>
+                <div class="pp-text" id="playerPlaceholderText">
+                  Үзэхийн тулд дарна уу
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: details -->
+        <div class="modal-detail-list" id="modalDetails">
+          <div class="mdl-row">
+            <div class="mdl-label">Үргэлжлэх хугацаа</div>
+            <div class="mdl-val" id="dRuntime">—</div>
+          </div>
+          <div class="mdl-row">
+            <div class="mdl-label">Хэл</div>
+            <div class="mdl-val" id="dLang">—</div>
+          </div>
+          <div class="mdl-row">
+            <div class="mdl-label">Нээлтийн огноо</div>
+            <div class="mdl-val" id="dRelease">—</div>
+          </div>
+          <div class="mdl-row">
+            <div class="mdl-label">Үнэлгээ</div>
+            <div class="mdl-val" id="dRating">—</div>
+          </div>
+          <div class="mdl-row">
+            <div class="mdl-label">Улс</div>
+            <div class="mdl-val" id="dCountry">—</div>
+          </div>
+          <div class="mdl-row" style="margin-top:6px;">
+            <div class="badge-row">
+              <span class="tmdb-logo-badge">TMDB</span>
+              <span class="imdb-logo-badge">IMDb</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /modal-body -->
+  </div>
+</div>
+
+<!-- PRICING MODAL -->
+<div id="pricingModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:1200;align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this)closePricing()">
+  <div id="pricingBox" style="background:#111827;border-radius:16px;width:100%;max-width:760px;padding:32px 36px;position:relative;border:1px solid rgba(255,255,255,0.07);max-height:90vh;overflow-y:auto;">
+    <button onclick="closePricing()" style="position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.06);border:none;color:#aaa;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;" onmouseover="this.style.background='rgba(255,255,255,0.12)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'">✕</button>
+    <div style="font-size:0.75rem;color:#8892a4;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">StreamMN</div>
+    <h2 style="font-size:1.6rem;font-weight:700;margin-bottom:8px;">StreamMN-ийн эрх сунгах</h2>
+    <p style="font-size:0.88rem;color:#8892a4;margin-bottom:24px;">Нэг удаа төлөөд бүх кино, цуврал, аниме, шоу бүгдийг үзээрэй</p>
+
+    <!-- STEP 1: Plan selection -->
+    <div id="step-plans">
+      <div style="font-size:0.9rem;font-weight:600;margin-bottom:14px;">Хугацаагаа сонго</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;" id="plan-grid">
+        <div onclick="selectPlan(this,'1 сараар','12,900₮',12900)" style="background:#1a2235;border:1.5px solid #2a3550;border-radius:12px;padding:20px;cursor:pointer;transition:border-color 0.2s;position:relative;" onmouseover="this.style.borderColor='#7c3aed'" onmouseout="if(!this.classList.contains('selected'))this.style.borderColor='#2a3550'">
+          <div style="font-size:0.95rem;font-weight:600;margin-bottom:4px;">1 сараар</div>
+          <div style="font-size:0.8rem;color:#8892a4;margin-bottom:12px;">Хямдрал: 0%</div>
+          <div style="font-size:1.6rem;font-weight:700;">12,900₮</div>
+          <div style="font-size:0.75rem;color:#8892a4;margin-top:4px;">12,900₮ сард</div>
+        </div>
+        <div onclick="selectPlan(this,'2 сараар','23,300₮',23300)" style="background:#1a2235;border:1.5px solid #2a3550;border-radius:12px;padding:20px;cursor:pointer;transition:border-color 0.2s;position:relative;" onmouseover="this.style.borderColor='#7c3aed'" onmouseout="if(!this.classList.contains('selected'))this.style.borderColor='#2a3550'">
+          <div style="position:absolute;top:14px;right:14px;background:#e91e8c;color:#fff;font-size:0.65rem;font-weight:700;padding:3px 10px;border-radius:20px;">ИХ СОНГОДОГ</div>
+          <div style="font-size:0.95rem;font-weight:600;margin-bottom:4px;">2 сараар</div>
+          <div style="font-size:0.8rem;color:#8892a4;margin-bottom:12px;">Хямдрал: 10%</div>
+          <div style="font-size:1.6rem;font-weight:700;">23,300₮</div>
+          <div style="font-size:0.75rem;color:#8892a4;margin-top:4px;">11,650₮ сард</div>
+        </div>
+        <div onclick="selectPlan(this,'3 сараар','31,000₮',31000)" style="background:#1a2235;border:1.5px solid #2a3550;border-radius:12px;padding:20px;cursor:pointer;transition:border-color 0.2s;position:relative;" onmouseover="this.style.borderColor='#7c3aed'" onmouseout="if(!this.classList.contains('selected'))this.style.borderColor='#2a3550'">
+          <div style="position:absolute;top:14px;right:14px;background:#00bcd4;color:#000;font-size:0.65rem;font-weight:700;padding:3px 10px;border-radius:20px;">УХААЛАГ СОНГОЛТ</div>
+          <div style="font-size:0.95rem;font-weight:600;margin-bottom:4px;">3 сараар</div>
+          <div style="font-size:0.8rem;color:#8892a4;margin-bottom:12px;">Хямдрал: 20%</div>
+          <div style="font-size:1.6rem;font-weight:700;">31,000₮</div>
+          <div style="font-size:0.75rem;color:#8892a4;margin-top:4px;">10,300₮ сард</div>
+        </div>
+        <div onclick="selectPlan(this,'6 сараар','50,400₮',50400)" style="background:#1a2235;border:1.5px solid #2a3550;border-radius:12px;padding:20px;cursor:pointer;transition:border-color 0.2s;position:relative;" onmouseover="this.style.borderColor='#7c3aed'" onmouseout="if(!this.classList.contains('selected'))this.style.borderColor='#2a3550'">
+          <div style="position:absolute;top:14px;right:14px;background:#9c27b0;color:#fff;font-size:0.65rem;font-weight:700;padding:3px 10px;border-radius:20px;">ИХ ХЭМНЭЛТ</div>
+          <div style="font-size:0.95rem;font-weight:600;margin-bottom:4px;">6 сараар</div>
+          <div style="font-size:0.8rem;color:#8892a4;margin-bottom:12px;">Хямдрал: 35%</div>
+          <div style="font-size:1.6rem;font-weight:700;">50,400₮</div>
+          <div style="font-size:0.75rem;color:#8892a4;margin-top:4px;">8,400₮ сард</div>
+        </div>
+        <div onclick="selectPlan(this,'12 сараар','77,400₮',77400)" style="background:#1a2235;border:1.5px solid #2a3550;border-radius:12px;padding:20px;cursor:pointer;transition:border-color 0.2s;position:relative;grid-column:span 2;" onmouseover="this.style.borderColor='#7c3aed'" onmouseout="if(!this.classList.contains('selected'))this.style.borderColor='#2a3550'">
+          <div style="position:absolute;top:14px;right:14px;background:#f5c518;color:#000;font-size:0.65rem;font-weight:700;padding:3px 10px;border-radius:20px;">ХАМГИЙН АШИГТАЙ</div>
+          <div style="font-size:0.95rem;font-weight:600;margin-bottom:4px;">12 сараар</div>
+          <div style="font-size:0.8rem;color:#8892a4;margin-bottom:12px;">Хямдрал: 50%</div>
+          <div style="font-size:1.6rem;font-weight:700;">77,400₮</div>
+          <div style="font-size:0.75rem;color:#8892a4;margin-top:4px;">6,450₮ сард</div>
+        </div>
+      </div>
+
+      <!-- Invite code row -->
+      <div style="display:flex;gap:10px;margin-top:18px;">
+        <input id="invite-code" type="text" placeholder="Урилгын код оруулах (заавал биш)" style="flex:1;background:#1a2235;border:1px solid #2a3550;border-radius:8px;padding:12px 16px;color:#fff;font-size:0.88rem;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='#7c3aed'" onblur="this.style.borderColor='#2a3550'"/>
+        <button onclick="checkInviteCode()" style="background:#7c3aed;color:#fff;padding:12px 20px;border-radius:8px;border:none;font-size:0.88rem;font-weight:600;cursor:pointer;white-space:nowrap;font-family:'DM Sans',sans-serif;">Шалгах</button>
+      </div>
+
+      <!-- Continue button -->
+      <button id="subscribe-btn" onclick="goToPayment()" style="width:100%;background:#7c3aed;color:#fff;padding:15px;border-radius:10px;border:none;font-size:1rem;font-weight:700;cursor:pointer;margin-top:16px;font-family:'DM Sans',sans-serif;opacity:0.5;pointer-events:none;" id="continue-btn">Үргэлжлүүлэх</button>
+    </div>
+
+    <!-- STEP 2: Payment -->
+    <div id="step-payment" style="display:none;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div style="font-size:1.1rem;font-weight:700;">Гүйлгээ шалгах</div>
+        <button onclick="backToPlans()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);color:#ccc;padding:7px 16px;border-radius:8px;cursor:pointer;font-size:0.85rem;font-family:'DM Sans',sans-serif;">Буцах</button>
+      </div>
+      <p style="font-size:0.85rem;color:#8892a4;margin-bottom:20px;line-height:1.6;">Доорх данс руу сонгосон дүнгээ оруулаад, гүйлгээний утга дээр кодоо бичээд дараа нь "Гүйлгээ шалгах" дээр дарна.</p>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+        <!-- Bank info -->
+        <div style="background:#1a2235;border-radius:12px;padding:18px;">
+          <div style="font-size:0.75rem;color:#8892a4;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">Данс</div>
+          <div style="font-size:1rem;font-weight:700;margin-bottom:4px;">M Bank</div>
+          <div style="font-size:0.85rem;color:#aaa;margin-bottom:14px;">МӨНХЗУЛ БАТХУЯГ</div>
+          <div style="font-size:0.72rem;color:#8892a4;margin-bottom:3px;">Дансны дугаар</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <div style="font-size:1rem;font-weight:600;">8000652700</div>
+            <button onclick="copyText('8000652700',this)" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);color:#ccc;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:0.75rem;font-family:'DM Sans',sans-serif;">Хуулах</button>
+          </div>
+          <div style="font-size:0.72rem;color:#8892a4;margin-bottom:3px;">IBAN</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="font-size:0.9rem;font-weight:600;">370039008000652700</div>
+            <button onclick="copyText('370039008000652700',this)" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);color:#ccc;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:0.75rem;font-family:'DM Sans',sans-serif;">Хуулах</button>
+          </div>
+        </div>
+        <!-- Amount -->
+        <div style="background:#1a2235;border-radius:12px;padding:18px;">
+          <div style="font-size:0.75rem;color:#8892a4;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">Төлөх дүн</div>
+          <div style="font-size:2rem;font-weight:700;margin-bottom:16px;" id="pay-amount-display">—</div>
+          <button onclick="copyText(document.getElementById('pay-amount-raw').value,this)" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);color:#ccc;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:0.75rem;font-family:'DM Sans',sans-serif;">Хуулах</button>
+          <input id="pay-amount-raw" type="hidden" value=""/>
+        </div>
+      </div>
+
+      <!-- Transaction code -->
+      <div style="background:#1a2235;border-radius:12px;padding:18px;margin-bottom:14px;">
+        <div style="font-size:0.75rem;color:#8892a4;margin-bottom:6px;">Код (гүйлгээний утга дээр бичнэ)</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div style="font-size:1.5rem;font-weight:700;letter-spacing:2px;" id="tx-code">XXXXXXXX</div>
+          <button onclick="copyText(document.getElementById('tx-code').textContent,this)" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);color:#ccc;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:0.75rem;font-family:'DM Sans',sans-serif;">Хуулах</button>
+        </div>
+      </div>
+
+      <!-- Check button -->
+      <button id="check-btn" onclick="doCheckPayment()" style="width:100%;background:#7c3aed;color:#fff;padding:15px;border-radius:10px;border:none;font-size:1rem;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">
+        <span id="check-btn-label">Гүйлгээ шалгах • <span id="check-amount-label">—</span></span>
+      </button>
+      <div id="pay-status-msg" style="text-align:center;font-size:0.82rem;color:#e57373;margin-top:10px;display:none;">Одоохондоо олдсонгүй. 10–60 секунд хүлээгээд дахин оролдоорой.</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ABOUT / FAQ PAGE -->
+<div id="aboutPage" style="display:none;position:fixed;inset:0;background:var(--navy);z-index:900;overflow-y:auto;">
+  <!-- Nav -->
+  <div style="position:sticky;top:0;z-index:10;background:rgba(11,15,26,0.97);border-bottom:1px solid rgba(255,255,255,0.05);padding:0 24px;height:62px;display:flex;align-items:center;justify-content:space-between;">
+    <div style="display:flex;align-items:center;gap:16px;">
+      <div class="logo-wrap" onclick="closeAbout()"><div class="logo-icon">S</div><div class="logo-text">StreamMN</div></div>
+      <div class="nav-icon-btn">f</div><div class="nav-icon-btn">★</div><div class="nav-icon-btn">🔔</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;color:var(--accent);font-size:0.88rem;font-weight:600;cursor:pointer;" onclick="closeAbout()">⚡ Гишүүнчлэл <span style="font-size:0.7rem;">∧</span></div>
+  </div>
+
+  <!-- Hero -->
+  <div style="max-width:760px;margin:0 auto;padding:64px 32px 0;">
+    <h1 style="font-size:2.8rem;font-weight:800;margin-bottom:20px;line-height:1.15;">StreamMN тухай ба FAQ<br/><span style="font-size:2rem;">(^▽^)</span></h1>
+    <p style="font-size:0.95rem;color:#8892a4;line-height:1.7;margin-bottom:32px;max-width:600px;">StreamMN нь movie-web-ийн fork бөгөөд movie-web.app хаагдсаны дараа ч ажилласаар байхаар зориулагдсан. StreamMN нь хувийн, өөрөө байршуулсан VPS дээр ажилладаг. Би энэ сайтыг алдагдалтай ажиллуулдаг; үнэгүй контентыг дэмждэг үзэл бодлоосоо шалтгаалаад төлбөр маш бага байдаг.</p>
+
+    <!-- Search bar -->
+    <div style="position:relative;margin-bottom:12px;">
+      <span style="position:absolute;left:18px;top:50%;transform:translateY(-50%);color:#555;font-size:1rem;">🔍</span>
+      <input id="faq-search" type="text" placeholder="Тусламж/FAQ хайх..." oninput="filterFAQ(this.value)" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:30px;padding:14px 20px 14px 48px;color:#fff;font-size:0.95rem;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='#7c3aed'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'"/>
+    </div>
+    <p style="font-size:0.85rem;color:#555;margin-bottom:48px;">Хариулт олдохгүй байна уу? <span style="color:#7c3aed;cursor:pointer;font-weight:600;" onclick="showNotif('StreamMN','Дэмжлэг авах хуудас удахгүй!')">Эндээс дэмжлэг авна уу.</span></p>
+
+    <!-- FAQ content -->
+    <div id="faq-content">
+
+      <!-- SECTION: Ерөнхий -->
+      <div class="faq-section" style="margin-bottom:40px;">
+        <h2 style="font-size:1.4rem;font-weight:700;margin-bottom:24px;color:#fff;">Ерөнхий</h2>
+        <div style="position:relative;padding-left:32px;">
+          <div style="position:absolute;left:10px;top:0;bottom:0;width:1px;background:rgba(255,255,255,0.08);"></div>
+          <div class="faq-item" style="margin-bottom:28px;">
+            <div style="position:absolute;left:3px;width:16px;height:16px;background:#1a2235;border:1px solid #3a4560;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.65rem;color:#8892a4;margin-top:2px;">1</div>
+            <div style="font-size:1rem;font-weight:600;margin-bottom:8px;color:#fff;">Контент хаанаас гарч ирдэг вэ?</div>
+            <div style="font-size:0.88rem;color:#8892a4;line-height:1.7;">StreamMN ямар ч контентыг өөрөө байршуулдаггүй. Та үзэх зүйл дээр дармагц сонгосон контентыг интернэтээр хайдаг (ачааллах дэлгэц дээр болон "video sources" таб дээр ямар эх сурвалж ашиглаж байгааг харж болно). Контент хэзээ ч StreamMN руу байршуулдаггүй, бүгд энэ хайлтын механизмаар дамждаг.</div>
+          </div>
+          <div class="faq-item" style="margin-bottom:28px;">
+            <div style="font-size:1rem;font-weight:600;margin-bottom:8px;color:#fff;">Миний дата, өгөгдөл гэх мэт нь яах вэ?</div>
+            <div style="font-size:0.88rem;color:#8892a4;line-height:1.7;">Бүх өгөгдөл бидний серверт token хэлбэрээр байршдаг ба үүнийг хэн ч хуулж дахин ашиглах боломжгүй.</div>
+          </div>
+          <div class="faq-item" style="margin-bottom:28px;">
+            <div style="font-size:1rem;font-weight:600;margin-bottom:8px;color:#fff;">Илүү мэдээллийг яаж авах вэ?</div>
+            <div style="font-size:0.88rem;color:#8892a4;line-height:1.7;">StreamMN-ийн Facebook энэ хуудасны дээд хэсэг дээр байдаг!</div>
+          </div>
+          <div class="faq-item" style="margin-bottom:28px;">
+            <div style="font-size:1rem;font-weight:600;margin-bottom:8px;color:#fff;">StreamMN апп байдаг уу?</div>
+            <div style="font-size:0.88rem;color:#8892a4;line-height:1.7;">Одоохондоо үгүй, гэхдээ та үүнийг PWA (Progressive Web App) болгон суулгаж болно. iOS дээр Safari → Share → Add to Home Screen. Android дээр Chrome → 3 цэг → Add to Home Screen. Манайх удахгүй Апп хийх болно.</div>
+          </div>
+          <div class="faq-item" style="margin-bottom:28px;">
+            <div style="font-size:1rem;font-weight:600;margin-bottom:8px;color:#fff;">Би яаж бүртгэл үүсгэх вэ?</div>
+            <div style="font-size:0.88rem;color:#8892a4;line-height:1.7;">Та нэвтрэх товчин дээр дарж бүртгэл үүсгэх сонгож EMAIL хаягаараа бүртгэл үүсгэх боломжтой.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION: Хайлт ба контентын боломж -->
+      <div class="faq-section" style="margin-bottom:40px;">
+        <h2 style="font-size:1.4rem;font-weight:700;margin-bottom:24px;color:#fff;">Хайлт ба контентын боломж</h2>
+        <div style="position:relative;padding-left:32px;">
+          <div style="position:absolute;left:10px;top:0;bottom:0;width:1px;background:rgba(255,255,255,0.08);"></div>
+          <div class="faq-item" style="margin-bottom:28px;">
+            <div style="font-size:1rem;font-weight:600;margin-bottom:8px;color:#fff;">Кино/цуврал хүсэлтээ хаана гаргах вэ?</div>
+            <div style="font-size:0.88rem;color:#8892a4;line-height:1.7;">Кино эсвэл цуврал хүсэлт гаргах боломжгүй. StreamMN контентыг удирддаггүй. Бүх контент интернэт дээрх эх сурвалжуудаар дамжин харагддаг.</div>
+          </div>
+          <div class="faq-item" style="margin-bottom:28px;">
+            <div style="font-size:1rem;font-weight:600;margin-bottom:8px;color:#fff;">Хайлтын үр дүнд кино/цуврал харагдаж байна, тэгээд яагаад тоглуулахгүй байна вэ?</div>
+            <div style="font-size:0.88rem;color:#8892a4;line-height:1.7;">Манай хайлтын үр дүн The Movie Database (TMDB)-ээс ирдэг бөгөөд манай эх сурвалжууд дээр тухайн контент үнэхээр байгаа эсэхээс үл хамааран харагддаг.</div>
+          </div>
+          <div class="faq-item" style="margin-bottom:28px;">
+            <div style="font-size:1rem;font-weight:600;margin-bottom:8px;color:#fff;">Энэ контент алга / Контент хүсэлт гаргаж болох уу?</div>
+            <div style="font-size:0.88rem;color:#8892a4;line-height:1.7;">Үгүй—бид контент байршуулдаггүй тул байгаа зүйлийг нэмэх эсвэл өөрчлөх боломжгүй. Контентын жагсаалт нь хайлтын механизмаар олон нийтэд нээлттэй байгаа зүйл дээр үндэслэдэг.</div>
+          </div>
+          <div class="faq-item" style="margin-bottom:28px;">
+            <div style="font-size:1rem;font-weight:600;margin-bottom:8px;color:#fff;">Хайж байгаа кино/цувралаа олж чадахгүй байна!</div>
+            <div style="font-size:0.88rem;color:#8892a4;line-height:1.7;">Манай хайлтыг TMDB ажиллуулдаг. Хэрэв үр дүн оновчгүй байвал 🔍 дүрс дээр дарж advanced хайлтын тохируулгуудыг ашиглаарай.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION: Тоглуулах асуудлууд -->
+      <div class="faq-section" style="margin-bottom:40px;">
+        <h2 style="font-size:1.4rem;font-weight:700;margin-bottom:24px;color:#fff;">Тоглуулах асуудлууд</h2>
+        <div style="position:relative;padding-left:32px;">
+          <div style="position:absolute;left:10px;top:0;bottom:0;width:1px;background:rgba(255,255,255,0.08);"></div>
+          <div class="faq-item" style="margin-bottom:28px;">
+            <div style="font-size:1rem;font-weight:600;margin-bottom:8px;color:#fff;">Яагаад хар дэлгэц гарч ирээд байна вэ?</div>
+            <div style="font-size:0.88rem;color:#8892a4;line-height:1.7;">Ихэвчлэн эвдэрхий эсвэл гэмтсэн видео файл байдаг. Эх сурвалжаа солиод үзээрэй.</div>
+          </div>
+          <div class="faq-item" style="margin-bottom:28px;">
+            <div style="font-size:1rem;font-weight:600;margin-bottom:8px;color:#fff;">Миний үзэж байгаа анги буруу байна.</div>
+            <div style="font-size:0.88rem;color:#8892a4;line-height:1.7;">Өөр эх сурвалж руу соль. Бид контент болон ангийн үнэн зөвийг хянах боломжгүй.</div>
+          </div>
+          <div class="faq-item" style="margin-bottom:28px;">
+            <div style="font-size:1rem;font-weight:600;margin-bottom:8px;color:#fff;">Видеоны чанар миний хүлээсэн шиг биш байна.</div>
+            <div style="font-size:0.88rem;color:#8892a4;line-height:1.7;">Эх сурвалжаа солиод үзээрэй. Чанар нь provider-оос хамаарч өөр өөр байдаг; FED API ихэвчлэн илүү олон сонголт өгдөг.</div>
+          </div>
+          <div class="faq-item" style="margin-bottom:28px;">
+            <div style="font-size:1rem;font-weight:600;margin-bottom:8px;color:#fff;">4К байхгүй байна.</div>
+            <div style="font-size:0.88rem;color:#8892a4;line-height:1.7;">Хэрэв 4К харагдахгүй байвал тухайн эх сурвалжаас 4К боломжгүй байх магадлалтай.</div>
+          </div>
+          <div class="faq-item" style="margin-bottom:28px;">
+            <div style="font-size:1rem;font-weight:600;margin-bottom:8px;color:#fff;">Яагаад дуу гарахгүй байна вэ?</div>
+            <div style="font-size:0.88rem;color:#8892a4;line-height:1.7;">Таны төхөөрөмж mute дээр биш эсэхийг шалгаад эх сурвалжаа солиод үзээрэй. Дууны асуудал нь тухайн эх сурвалжаас шалтгаалж болно.</div>
+          </div>
+          <div class="faq-item" style="margin-bottom:28px;">
+            <div style="font-size:1rem;font-weight:600;margin-bottom:8px;color:#fff;">Видео өнгө нь өөрчлөгдсөн эсвэл цайрсан мэт байна.</div>
+            <div style="font-size:0.88rem;color:#8892a4;line-height:1.7;">Эвдэрхий файл эсвэл HDR видео байж болно. Таны төхөөрөмж HDR дэмждэг эсэхийг шалгаад, эсвэл эх сурвалжаа солиорой.</div>
+          </div>
+          <div class="faq-item" style="margin-bottom:28px;">
+            <div style="font-size:1rem;font-weight:600;margin-bottom:8px;color:#fff;">Дүрс эвдрэл, гажуудал гарч байна.</div>
+            <div style="font-size:0.88rem;color:#8892a4;line-height:1.7;">Дүрсний гажуудал ихэнхдээ чанар муутай upload-оос болдог. Эх сурвалжаа солиод үзээрэй.</div>
+          </div>
+          <div class="faq-item" style="margin-bottom:28px;">
+            <div style="font-size:1rem;font-weight:600;margin-bottom:8px;color:#fff;">Эх сурвалж удаан ачааллаж байна.</div>
+            <div style="font-size:0.88rem;color:#8892a4;line-height:1.7;">Хурд нь байршуулж байгаа сайтаас хамаарна. Илүү сайн ажиллагаатай өөр эх сурвалж сонгоорой.</div>
+          </div>
+          <div class="faq-item" style="margin-bottom:28px;">
+            <div style="font-size:1rem;font-weight:600;margin-bottom:8px;color:#fff;">Эх сурвалжаа яаж солих вэ?</div>
+            <div style="font-size:0.88rem;color:#8892a4;line-height:1.7;">Тоглож байх үед ⚙️ дээр дарж, "video sources" хэсгээс өөр эх сурвалж сонгоорой.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION: Хэл ба хадмалын тохиргоо -->
+      <div class="faq-section" style="margin-bottom:40px;">
+        <h2 style="font-size:1.4rem;font-weight:700;margin-bottom:24px;color:#fff;">Хэл ба хадмалын тохиргоо</h2>
+        <div style="position:relative;padding-left:32px;">
+          <div style="position:absolute;left:10px;top:0;bottom:0;width:1px;background:rgba(255,255,255,0.08);"></div>
+          <div class="faq-item" style="margin-bottom:28px;">
+            <div style="font-size:1rem;font-weight:600;margin-bottom:8px;color:#fff;">Хадмал орчуулга хийхэд алдаа гарлаа</div>
+            <div style="font-size:0.88rem;color:#8892a4;line-height:1.7;">Тухайн киноны ямар ч орчуулга хийх боломжит хадмал байхгүй байгаа учир алдааг мэдэгдэж админаар механик аргаар нэмүүлнэ үү.</div>
+          </div>
+          <div class="faq-item" style="margin-bottom:28px;">
+            <div style="font-size:1rem;font-weight:600;margin-bottom:8px;color:#fff;">Хадмал орчуулга утга төгс биш байна</div>
+            <div style="font-size:0.88rem;color:#8892a4;line-height:1.7;">Маш олон кино байршдаг тул тухайн киног хялбаржуулсан журмаар орчуулсан байж болзошгүй тул та алдаа мэдэгдэх товчин дээр дарж админаар хадмалыг дахин оруулна уу.</div>
+          </div>
+          <div class="faq-item" style="margin-bottom:28px;">
+            <div style="font-size:1rem;font-weight:600;margin-bottom:8px;color:#fff;">Хэлийг яаж солих вэ?</div>
+            <div style="font-size:0.88rem;color:#8892a4;line-height:1.7;">Бид Англи хэлийг тэргүүнд тавьдаг ч зарим эх сурвалж өөр хэл санал болгодог. Эх сурвалжаа солиод үзээрэй.</div>
+          </div>
+          <div class="faq-item" style="margin-bottom:28px;">
+            <div style="font-size:1rem;font-weight:600;margin-bottom:8px;color:#fff;">Миний хадмал таарахгүй байна.</div>
+            <div style="font-size:0.88rem;color:#8892a4;line-height:1.7;">Хадмалын тохиргоон дахь "Customize"-ийг ашиглаарай эсвэл гар дээрх [ ба ] товчоор тохируулж болно. Мөн өөрийн хадмал файлаа upload хийж болно. Аль эсвэл алдааг мэдэгдэж админаар засуулаарай.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom nav -->
+      <div style="display:flex;gap:12px;margin-bottom:48px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.06);">
+        <button onclick="showNotif('StreamMN','Discover хуудас удахгүй!')" style="flex:1;background:#1a2235;border:1px solid #2a3550;color:#fff;padding:14px;border-radius:8px;cursor:pointer;font-size:0.9rem;font-weight:500;font-family:'DM Sans',sans-serif;">Discover</button>
+        <button onclick="showNotif('StreamMN','Support хуудас удахгүй!')" style="flex:1;background:#1a2235;border:1px solid #2a3550;color:#fff;padding:14px;border-radius:8px;cursor:pointer;font-size:0.9rem;font-weight:500;font-family:'DM Sans',sans-serif;">Support</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div style="background:#000;border-top:1px solid #111;padding:28px 32px;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:20px;max-width:100%;">
+    <div style="max-width:360px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;"><div class="logo-icon">S</div><div class="logo-text">StreamMN</div></div>
+      <div style="font-size:0.85rem;color:#555;line-height:1.6;">Хүссэн кино, цуврал, аниме хэзээ ч хаанаас ч үзээрэй! (ʘ‿ʘ)</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:16px;color:#444;font-size:0.82rem;cursor:pointer;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#444'">f Facebook</div>
+    </div>
+    <div style="font-size:0.78rem;color:#333;text-align:right;line-height:1.8;max-width:440px;">
+      <div style="color:#7c3aed;font-size:0.85rem;margin-bottom:6px;">Санамж ¯\(ツ)/¯</div>
+      Анхаар: StreamMN нь ямар ч файл өөрөө байршуулдаггүй, зөвхөн гуравдагч талын<br/>provider-уудаас контентыг харуулдаг. Хуулийн эрх зүйн асуудлыг тэдэнтэй<br/>шийдвэрлэнэ үү.
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS PAGE -->
+<div id="settingsPage" style="display:none;position:fixed;inset:0;background:var(--navy);z-index:900;overflow-y:auto;">
+  <!-- Settings Nav -->
+  <div style="position:fixed;top:0;left:0;right:0;z-index:10;background:rgba(11,15,26,0.97);border-bottom:1px solid rgba(255,255,255,0.05);padding:0 24px;height:62px;display:flex;align-items:center;justify-content:space-between;">
+    <div style="display:flex;align-items:center;gap:16px;">
+      <div class="logo-wrap" onclick="closeSettings()"><div class="logo-icon">S</div><div class="logo-text">StreamMN</div></div>
+      <div class="nav-icon-btn">f</div><div class="nav-icon-btn">★</div><div class="nav-icon-btn">🔔</div>
+    </div>
+    <input placeholder="Тохиргоо хайх..." style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:7px 18px;color:#fff;font-size:0.85rem;font-family:'DM Sans',sans-serif;outline:none;width:280px;" onfocus="this.style.borderColor='#7c3aed'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'"/>
+    <div style="display:flex;align-items:center;gap:6px;color:var(--accent);font-size:0.88rem;font-weight:600;cursor:pointer;">⚡ Гишүүнчлэл <span style="font-size:0.7rem;">∨</span></div>
+  </div>
+
+  <div style="display:flex;padding-top:62px;min-height:100vh;">
+    <!-- Sidebar -->
+    <div style="width:280px;flex-shrink:0;padding:28px 16px;background:rgba(0,0,0,0.2);border-right:1px solid rgba(255,255,255,0.04);position:sticky;top:62px;height:calc(100vh - 62px);overflow-y:auto;">
+      <div style="font-size:0.7rem;font-weight:700;letter-spacing:2px;color:#555;text-transform:uppercase;margin-bottom:12px;padding:0 8px;">ТОХИРГОО</div>
+      <div id="snav-all" onclick="settingsNav('all',this)" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;font-size:0.88rem;background:rgba(124,58,237,0.15);color:#a78bfa;margin-bottom:2px;">⚙️ Бүх тохиргоо</div>
+      <div id="snav-account" onclick="settingsNav('account',this)" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;font-size:0.88rem;color:#8892a4;margin-bottom:2px;" onmouseover="this.style.background='rgba(255,255,255,0.04)'" onmouseout="if(!this.classList.contains('active'))this.style.background='transparent'">👤 Акаунт</div>
+      <div id="snav-preferences" onclick="settingsNav('preferences',this)" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;font-size:0.88rem;color:#8892a4;margin-bottom:2px;" onmouseover="this.style.background='rgba(255,255,255,0.04)'" onmouseout="if(!this.classList.contains('active'))this.style.background='transparent'">⚙️ Сонголтууд</div>
+      <div id="snav-appearance" onclick="settingsNav('appearance',this)" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;font-size:0.88rem;color:#8892a4;margin-bottom:2px;" onmouseover="this.style.background='rgba(255,255,255,0.04)'" onmouseout="if(!this.classList.contains('active'))this.style.background='transparent'">🎨 Гадаад төрх</div>
+      <div id="snav-subtitles" onclick="settingsNav('subtitles',this)" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;font-size:0.88rem;color:#8892a4;margin-bottom:2px;" onmouseover="this.style.background='rgba(255,255,255,0.04)'" onmouseout="if(!this.classList.contains('active'))this.style.background='transparent'">📝 Хадмал</div>
+      <div id="snav-devices" onclick="settingsNav('devices',this)" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;font-size:0.88rem;color:#8892a4;margin-bottom:2px;" onmouseover="this.style.background='rgba(255,255,255,0.04)'" onmouseout="if(!this.classList.contains('active'))this.style.background='transparent'">💻 Devices</div>
+      <div id="snav-referral" onclick="settingsNav('referral',this)" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;font-size:0.88rem;color:#8892a4;margin-bottom:2px;" onmouseover="this.style.background='rgba(255,255,255,0.04)'" onmouseout="if(!this.classList.contains('active'))this.style.background='transparent'">🔗 Урилга</div>
+    </div>
+
+    <!-- Main content -->
+    <div style="flex:1;padding:36px 48px;max-width:900px;">
+
+      <!-- ACCOUNT -->
+      <div id="sec-account">
+        <h1 style="font-size:2.5rem;font-weight:800;margin-bottom:24px;">Акаунт</h1>
+        <div style="background:#111827;border-radius:12px;padding:24px;border:1px solid rgba(255,255,255,0.06);margin-bottom:24px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+            <div style="font-size:1.1rem;font-weight:700;">Subscription</div>
+            <span style="color:#4ade80;font-size:0.82rem;font-weight:600;" id="s-sub-status">active</span>
+          </div>
+          <div style="font-size:0.85rem;color:#8892a4;margin-bottom:20px;" id="s-sub-email"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px;">
+            <div style="background:#1a2235;border-radius:8px;padding:16px;">
+              <div style="font-size:0.72rem;color:#555;margin-bottom:6px;">Start</div>
+              <div style="font-size:0.9rem;font-weight:500;" id="s-sub-start">—</div>
+            </div>
+            <div style="background:#1a2235;border-radius:8px;padding:16px;">
+              <div style="font-size:0.72rem;color:#555;margin-bottom:6px;">End</div>
+              <div style="font-size:0.9rem;font-weight:500;" id="s-sub-end">—</div>
+            </div>
+            <div style="background:#1a2235;border-radius:8px;padding:16px;">
+              <div style="font-size:0.72rem;color:#555;margin-bottom:6px;">Remaining</div>
+              <div style="font-size:0.9rem;font-weight:500;" id="s-sub-remaining">—</div>
+            </div>
+          </div>
+          <div style="font-size:1rem;font-weight:600;margin-bottom:12px;">Subscription history</div>
+          <div style="background:#1a2235;border-radius:8px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <div style="font-size:0.95rem;font-weight:600;" id="s-hist-amount">—</div>
+              <div style="font-size:0.78rem;color:#555;margin-top:3px;" id="s-hist-dates">—</div>
+            </div>
+            <span style="background:#1e2740;border:1px solid #2a3550;color:#8892a4;font-size:0.75rem;padding:3px 10px;border-radius:5px;">paid</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PREFERENCES -->
+      <div id="sec-preferences">
+        <h1 style="font-size:2.5rem;font-weight:800;margin-bottom:24px;">Сонголтууд</h1>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;">
+          <div>
+            <!-- App language -->
+            <div style="margin-bottom:28px;">
+              <div style="font-size:1rem;font-weight:700;margin-bottom:6px;">Аппын хэл</div>
+              <div style="font-size:0.82rem;color:#8892a4;margin-bottom:12px;line-height:1.5;">Аппын бүх хэсэгт хэл үйлчилнэ, тэнэг хошигнол зөвхөн англи дээр байдаг 🙁.</div>
+              <select style="width:100%;background:#1a2235;border:1px solid #2a3550;border-radius:8px;padding:10px 14px;color:#fff;font-size:0.88rem;font-family:'DM Sans',sans-serif;outline:none;cursor:pointer;">
+                <option>🇲🇳 Mongolian — монгол</option>
+                <option>🇺🇸 English</option>
+                <option>🇰🇷 한국어</option>
+              </select>
+            </div>
+            <!-- Thumbnail -->
+            <div style="margin-bottom:28px;">
+              <div style="font-size:1rem;font-weight:700;margin-bottom:6px;">Thumbnail үүсгэх</div>
+              <div style="font-size:0.82rem;color:#8892a4;margin-bottom:12px;line-height:1.5;">Ихэнх тохиолдолд видеонууд thumbnail-гүй байдаг. Үүнийг асаавал thumbnail-ийг шууд үүсгэх боломжтой ч видео удааширч магадгүй.</div>
+              <div style="background:#1a2235;border-radius:8px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-size:0.88rem;font-weight:500;">Thumbnail үүсгэх</span>
+                <label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer;"><input type="checkbox" style="opacity:0;width:0;height:0;" onchange="toggleSwitch(this)"/><span style="position:absolute;inset:0;background:#2a3550;border-radius:12px;transition:0.3s;" class="sw"></span></label>
+              </div>
+            </div>
+            <!-- Auto play -->
+            <div style="margin-bottom:28px;">
+              <div style="font-size:1rem;font-weight:700;margin-bottom:6px;">Авто тоглуулах</div>
+              <div style="font-size:0.82rem;color:#8892a4;margin-bottom:12px;line-height:1.5;">Анги дуусахад дараагийн ангийг автоматаар тоглуулна.</div>
+              <div style="background:#1a2235;border-radius:8px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-size:0.88rem;font-weight:500;">Авто тоглуулах</span>
+                <label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer;"><input type="checkbox" style="opacity:0;width:0;height:0;" onchange="toggleSwitch(this)"/><span style="position:absolute;inset:0;background:#2a3550;border-radius:12px;transition:0.3s;" class="sw"></span></label>
+              </div>
+            </div>
+            <!-- Low data mode -->
+            <div style="margin-bottom:28px;">
+              <div style="font-size:1rem;font-weight:700;margin-bottom:6px;">Бага гүйцэтгэл/бага дата горим</div>
+              <div style="font-size:0.82rem;color:#8892a4;margin-bottom:12px;line-height:1.5;">Удаан холболт, сул төхөөрөмж дээр ажиллахад тохируулж, их дата иддэг функцуудыг унтраана.</div>
+              <div style="background:#1a2235;border-radius:8px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-size:0.88rem;font-weight:500;">Бага гүйцэтгэл горим</span>
+                <label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer;"><input type="checkbox" style="opacity:0;width:0;height:0;" onchange="toggleSwitch(this)"/><span style="position:absolute;inset:0;background:#2a3550;border-radius:12px;transition:0.3s;" class="sw"></span></label>
+              </div>
+            </div>
+            <!-- Hold speed -->
+            <div style="margin-bottom:28px;">
+              <div style="font-size:1rem;font-weight:700;margin-bottom:6px;">Удаан дарж хурд нэмэх</div>
+              <div style="font-size:0.82rem;color:#8892a4;margin-bottom:12px;line-height:1.5;">Spacebar-ийг удаан дарах эсвэл дэлгэц дээр удаан дарж тоглуулах хурдыг түр 2x болгоно.</div>
+              <div style="background:#1a2235;border-radius:8px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-size:0.88rem;font-weight:500;">Удаан дарж хурд нэмэхийг идэвхжүүлэх</span>
+                <label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer;"><input type="checkbox" checked style="opacity:0;width:0;height:0;" onchange="toggleSwitch(this)"/><span style="position:absolute;inset:0;background:#7c3aed;border-radius:12px;transition:0.3s;" class="sw"></span></label>
+              </div>
+            </div>
+            <!-- Double tap -->
+            <div style="margin-bottom:28px;">
+              <div style="font-size:1rem;font-weight:700;margin-bottom:6px;">2 удаа товших алгасах</div>
+              <div style="font-size:0.82rem;color:#8892a4;margin-bottom:12px;line-height:1.5;">Player-ийн зүүн/баруун талд 2 удаа товшвол 10 секунд ухрах эсвэл урагшлах.</div>
+              <div style="background:#1a2235;border-radius:8px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-size:0.88rem;font-weight:500;">2 удаа товших алгасахыг идэвхжүүлэх</span>
+                <label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer;"><input type="checkbox" style="opacity:0;width:0;height:0;" onchange="toggleSwitch(this)"/><span style="position:absolute;inset:0;background:#2a3550;border-radius:12px;transition:0.3s;" class="sw"></span></label>
+              </div>
+            </div>
+            <!-- Keyboard shortcuts -->
+            <div style="margin-bottom:28px;">
+              <div style="font-size:1rem;font-weight:700;margin-bottom:6px;">Keyboard shortcut-ууд</div>
+              <div style="font-size:0.82rem;color:#8892a4;margin-bottom:12px;line-height:1.5;">Аппын keyboard shortcut-уудыг тохируулна. ` дээр удаан дарвал энэ тусламжийг хэзээд харж болно.</div>
+              <button style="background:#1a2235;border:1px solid #2a3550;color:#fff;padding:11px 20px;border-radius:8px;cursor:pointer;font-size:0.85rem;font-family:'DM Sans',sans-serif;" onclick="showNotif('StreamMN','Keyboard shortcut тохиргоо удахгүй!')">Keyboard shortcut-уудыг тохируулах</button>
+            </div>
+          </div>
+          <div>
+            <!-- Manual source -->
+            <div style="margin-bottom:28px;">
+              <div style="font-size:1rem;font-weight:700;margin-bottom:6px;">Гараар эх сурвалж сонгох</div>
+              <div style="font-size:0.82rem;color:#8892a4;margin-bottom:12px;line-height:1.5;">Scrape эхлэхээс өмнө эх сурвалж заавал сонгох шаардлагатай болгоно.</div>
+              <div style="background:#1a2235;border-radius:8px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-size:0.88rem;font-weight:500;">Гараар эх сурвалж сонгох</span>
+                <label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer;"><input type="checkbox" style="opacity:0;width:0;height:0;" onchange="toggleSwitch(this)"/><span style="position:absolute;inset:0;background:#2a3550;border-radius:12px;transition:0.3s;" class="sw"></span></label>
+              </div>
+            </div>
+            <!-- Auto continue -->
+            <div style="margin-bottom:28px;">
+              <div style="font-size:1rem;font-weight:700;margin-bottom:6px;">Тоглуулах алдаан дээр авто үргэлжлүүлэх</div>
+              <div style="font-size:0.82rem;color:#8892a4;margin-bottom:12px;line-height:1.5;">Одоогийн эх сурвалж тоглуулах үед алдаа гарвал автоматаар өөр эх сурвалж хайж үргэлжлүүлнэ.</div>
+              <div style="background:#1a2235;border-radius:8px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-size:0.88rem;font-weight:500;">Тоглуулах алдаан дээр авто үргэлжлүүлэх</span>
+                <label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer;"><input type="checkbox" checked style="opacity:0;width:0;height:0;" onchange="toggleSwitch(this)"/><span style="position:absolute;inset:0;background:#7c3aed;border-radius:12px;transition:0.3s;" class="sw"></span></label>
+              </div>
+            </div>
+            <!-- Last source -->
+            <div style="margin-bottom:28px;">
+              <div style="font-size:1rem;font-weight:700;margin-bottom:6px;">Сүүлд амжилттай болсон эх сурвалж</div>
+              <div style="font-size:0.82rem;color:#8892a4;margin-bottom:12px;line-height:1.5;">Өмнөх ангид амжилттай ажилласан эх сурвалжийг автоматаар туршиж ашиглана.</div>
+              <div style="background:#1a2235;border-radius:8px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-size:0.88rem;font-weight:500;">Сүүлд ашигласан эх сурвалж</span>
+                <label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer;"><input type="checkbox" style="opacity:0;width:0;height:0;" onchange="toggleSwitch(this)"/><span style="position:absolute;inset:0;background:#2a3550;border-radius:12px;transition:0.3s;" class="sw"></span></label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- APPEARANCE -->
+      <div id="sec-appearance">
+        <h1 style="font-size:2.5rem;font-weight:800;margin-bottom:24px;">Гадаад төрх</h1>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;">
+          <div>
+            <!-- Discover section -->
+            <div style="margin-bottom:28px;">
+              <div style="font-size:1rem;font-weight:700;margin-bottom:6px;">Discover хэсэг</div>
+              <div style="font-size:0.82rem;color:#8892a4;margin-bottom:12px;line-height:1.5;">Нүүр хуудсан дээр bookmark-уудын доор Discover хэсгийг харуулах. Анхдагчаар идэвхтэй.</div>
+              <div style="background:#1a2235;border-radius:8px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-size:0.88rem;font-weight:500;">Discover хэсэг</span>
+                <label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer;"><input type="checkbox" checked style="opacity:0;width:0;height:0;" onchange="toggleSwitch(this)"/><span style="position:absolute;inset:0;background:#7c3aed;border-radius:12px;transition:0.3s;" class="sw"></span></label>
+              </div>
+            </div>
+            <!-- Featured content -->
+            <div style="margin-bottom:28px;">
+              <div style="font-size:1rem;font-weight:700;margin-bottom:6px;">Онцлох контент</div>
+              <div style="font-size:0.82rem;color:#8892a4;margin-bottom:12px;line-height:1.5;">Нүүр хуудсын дээд хэсэгт онцлох кино, цувралын carousel харуулах! Анхдагчаар идэвхгүй.</div>
+              <div style="background:#1a2235;border-radius:8px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-size:0.88rem;font-weight:500;">Онцлох контент</span>
+                <label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer;"><input type="checkbox" style="opacity:0;width:0;height:0;" onchange="toggleSwitch(this)"/><span style="position:absolute;inset:0;background:#2a3550;border-radius:12px;transition:0.3s;" class="sw"></span></label>
+              </div>
+            </div>
+            <!-- Carousel view -->
+            <div style="margin-bottom:28px;">
+              <div style="font-size:1rem;font-weight:700;margin-bottom:6px;">Carousel харагдац</div>
+              <div style="font-size:0.82rem;color:#8892a4;margin-bottom:12px;line-height:1.5;">Одоо үзэж буй болон bookmark хэсгүүдийг grid-ийн оронд carousel байдлаар харуулах.</div>
+              <div style="background:#1a2235;border-radius:8px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-size:0.88rem;font-weight:500;">Carousel харагдац</span>
+                <label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer;"><input type="checkbox" style="opacity:0;width:0;height:0;" onchange="toggleSwitch(this)"/><span style="position:absolute;inset:0;background:#2a3550;border-radius:12px;transition:0.3s;" class="sw"></span></label>
+              </div>
+            </div>
+            <!-- Minimal card -->
+            <div style="margin-bottom:28px;">
+              <div style="font-size:1rem;font-weight:700;margin-bottom:6px;">Минимал карт</div>
+              <div style="font-size:0.82rem;color:#8892a4;margin-bottom:12px;line-height:1.5;">Media card дээрх текстийг (гарчиг, төрөл, он) нууж, зөвхөн постер зургийг харуулах.</div>
+              <div style="background:#1a2235;border-radius:8px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-size:0.88rem;font-weight:500;">Минимал карт</span>
+                <label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer;"><input type="checkbox" style="opacity:0;width:0;height:0;" onchange="toggleSwitch(this)"/><span style="position:absolute;inset:0;background:#2a3550;border-radius:12px;transition:0.3s;" class="sw"></span></label>
+              </div>
+            </div>
+          </div>
+          <!-- Theme selector -->
+          <div>
+            <div style="font-size:1rem;font-weight:700;margin-bottom:16px;">Өнгөний загвар</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <div onclick="selectTheme(this,'#0b0f1a')" style="cursor:pointer;border-radius:8px;overflow:hidden;border:2px solid #7c3aed;position:relative;">
+                <div style="background:#0b0f1a;height:70px;padding:8px;">
+                  <div style="width:14px;height:14px;border-radius:50%;background:#a78bfa;margin-bottom:6px;"></div>
+                  <div style="height:4px;background:#1a2235;border-radius:2px;margin-bottom:4px;width:70%;"></div>
+                  <div style="height:4px;background:#1a2235;border-radius:2px;width:50%;"></div>
+                </div>
+                <div style="background:#0e1320;padding:6px 8px;font-size:0.75rem;display:flex;align-items:center;justify-content:space-between;">Анхдагч <span style="background:#7c3aed;color:#fff;font-size:0.65rem;padding:1px 6px;border-radius:10px;">Идэвхтэй</span></div>
+              </div>
+              <div onclick="selectTheme(this,'#1a1a2e')" style="cursor:pointer;border-radius:8px;overflow:hidden;border:2px solid #2a3550;">
+                <div style="background:#1a1a2e;height:70px;padding:8px;"><div style="width:14px;height:14px;border-radius:50%;background:#e879f9;margin-bottom:6px;"></div><div style="height:4px;background:#2a2a4e;border-radius:2px;margin-bottom:4px;width:70%;"></div><div style="height:4px;background:#2a2a4e;border-radius:2px;width:50%;"></div></div>
+                <div style="background:#141428;padding:6px 8px;font-size:0.75rem;">Сонгодог</div>
+              </div>
+              <div onclick="selectTheme(this,'#0a1628')" style="cursor:pointer;border-radius:8px;overflow:hidden;border:2px solid #2a3550;">
+                <div style="background:#0a1628;height:70px;padding:8px;"><div style="width:14px;height:14px;border-radius:50%;background:#38bdf8;margin-bottom:6px;"></div><div style="height:4px;background:#1a2a42;border-radius:2px;margin-bottom:4px;width:70%;"></div><div style="height:4px;background:#1a2a42;border-radius:2px;width:50%;"></div></div>
+                <div style="background:#061020;padding:6px 8px;font-size:0.75rem;">Цэнхэр</div>
+              </div>
+              <div onclick="selectTheme(this,'#0a1a0a')" style="cursor:pointer;border-radius:8px;overflow:hidden;border:2px solid #2a3550;">
+                <div style="background:#0a1a0a;height:70px;padding:8px;"><div style="width:14px;height:14px;border-radius:50%;background:#4ade80;margin-bottom:6px;"></div><div style="height:4px;background:#1a2e1a;border-radius:2px;margin-bottom:4px;width:70%;"></div><div style="height:4px;background:#1a2e1a;border-radius:2px;width:50%;"></div></div>
+                <div style="background:#061006;padding:6px 8px;font-size:0.75rem;">Ногоовтор цэнхэр</div>
+              </div>
+              <div onclick="selectTheme(this,'#1a0a0a')" style="cursor:pointer;border-radius:8px;overflow:hidden;border:2px solid #2a3550;">
+                <div style="background:#1a0a0a;height:70px;padding:8px;"><div style="width:14px;height:14px;border-radius:50%;background:#f87171;margin-bottom:6px;"></div><div style="height:4px;background:#2e1a1a;border-radius:2px;margin-bottom:4px;width:70%;"></div><div style="height:4px;background:#2e1a1a;border-radius:2px;width:50%;"></div></div>
+                <div style="background:#100606;padding:6px 8px;font-size:0.75rem;">Улаан</div>
+              </div>
+              <div onclick="selectTheme(this,'#111111')" style="cursor:pointer;border-radius:8px;overflow:hidden;border:2px solid #2a3550;">
+                <div style="background:#111111;height:70px;padding:8px;"><div style="width:14px;height:14px;border-radius:50%;background:#9ca3af;margin-bottom:6px;"></div><div style="height:4px;background:#2a2a2a;border-radius:2px;margin-bottom:4px;width:70%;"></div><div style="height:4px;background:#2a2a2a;border-radius:2px;width:50%;"></div></div>
+                <div style="background:#0a0a0a;padding:6px 8px;font-size:0.75rem;">Саарал</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUBTITLES -->
+      <div id="sec-subtitles">
+        <h1 style="font-size:2.5rem;font-weight:800;margin-bottom:24px;">Хадмал</h1>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;">
+          <div>
+            <div style="margin-bottom:20px;"><div style="font-size:1rem;font-weight:600;margin-bottom:6px;">Видеоны native хадмал</div><div style="font-size:0.82rem;color:#8892a4;margin-bottom:10px;">Fullscreen болон PiP дээр native broadcast хадмал ашиглах</div><div style="background:#1a2235;border-radius:8px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;"><span style="font-size:0.88rem;">Видеоны native хадмал</span><label style="position:relative;display:inline-block;width:44px;height:24px;"><input type="checkbox" style="opacity:0;width:0;height:0;" onchange="toggleSwitch(this)"/><span style="position:absolute;inset:0;background:#2a3550;border-radius:12px;transition:0.3s;" class="sw"></span></label></div></div>
+            <div style="margin-bottom:20px;"><div style="font-size:1rem;font-weight:600;margin-bottom:6px;">Дэвсгэрийн тунгалаг байдал</div><input type="range" min="0" max="100" value="50" style="width:100%;accent-color:#7c3aed;margin:8px 0;" oninput="this.nextElementSibling.textContent=this.value+'%'"/><span style="font-size:0.82rem;color:#8892a4;">50%</span></div>
+            <div style="margin-bottom:20px;"><div style="font-size:1rem;font-weight:600;margin-bottom:6px;">Дэвсгэр blur</div><div style="background:#1a2235;border-radius:8px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;"><span style="font-size:0.88rem;">Дэвсгэр blur</span><label style="position:relative;display:inline-block;width:44px;height:24px;"><input type="checkbox" checked style="opacity:0;width:0;height:0;" onchange="toggleSwitch(this)"/><span style="position:absolute;inset:0;background:#7c3aed;border-radius:12px;transition:0.3s;" class="sw"></span></label></div></div>
+            <div style="margin-bottom:20px;"><div style="font-size:1rem;font-weight:600;margin-bottom:6px;">Дэвсгэр blur-ийн хүч</div><input type="range" min="0" max="100" value="50" style="width:100%;accent-color:#7c3aed;margin:8px 0;" oninput="this.nextElementSibling.textContent=this.value+'%'"/><span style="font-size:0.82rem;color:#8892a4;">50%</span></div>
+            <div style="margin-bottom:20px;"><div style="font-size:1rem;font-weight:600;margin-bottom:6px;">Текстийн хэмжээ</div><input type="range" min="50" max="200" value="100" style="width:100%;accent-color:#7c3aed;margin:8px 0;" oninput="this.nextElementSibling.textContent=this.value+'%'"/><span style="font-size:0.82rem;color:#8892a4;">100%</span></div>
+            <div style="margin-bottom:20px;"><div style="font-size:1rem;font-weight:600;margin-bottom:6px;">Текстийн стиль</div><select style="background:#1a2235;border:1px solid #2a3550;border-radius:8px;padding:9px 14px;color:#fff;font-size:0.85rem;font-family:'DM Sans',sans-serif;outline:none;cursor:pointer;"><option>Анхдагч</option><option>Bold</option><option>Italic</option></select></div>
+            <div style="margin-bottom:20px;"><div style="font-size:1rem;font-weight:600;margin-bottom:6px;">Тод (Bold) текст</div><div style="background:#1a2235;border-radius:8px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;"><span style="font-size:0.88rem;">Тод (Bold) текст</span><label style="position:relative;display:inline-block;width:44px;height:24px;"><input type="checkbox" style="opacity:0;width:0;height:0;" onchange="toggleSwitch(this)"/><span style="position:absolute;inset:0;background:#2a3550;border-radius:12px;transition:0.3s;" class="sw"></span></label></div></div>
+            <div style="margin-bottom:20px;"><div style="font-size:1rem;font-weight:600;margin-bottom:10px;">Өнгө</div><div style="display:flex;gap:10px;align-items:center;"><div style="width:28px;height:28px;border-radius:50%;background:#fff;border:2px solid #7c3aed;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.7rem;">✓</div><div style="width:28px;height:28px;border-radius:50%;background:#60a5fa;cursor:pointer;border:2px solid transparent;"></div><div style="width:28px;height:28px;border-radius:50%;background:#fbbf24;cursor:pointer;border:2px solid transparent;"></div><div style="width:28px;height:28px;border-radius:50%;background:#4ade80;cursor:pointer;border:2px solid transparent;"></div><div style="width:28px;height:28px;border-radius:50%;background:#1a2235;cursor:pointer;border:2px solid #555;font-size:0.8rem;display:flex;align-items:center;justify-content:center;">🖌</div></div></div>
+            <div style="margin-bottom:20px;"><div style="font-size:1rem;font-weight:600;margin-bottom:10px;">Босоо байрлал</div><div style="display:flex;gap:8px;"><button style="background:#2a3550;border:1px solid #3a4560;color:#fff;padding:7px 16px;border-radius:6px;cursor:pointer;font-size:0.82rem;font-family:'DM Sans',sans-serif;">Анхдагч</button><button style="background:#1a2235;border:1px solid #2a3550;color:#8892a4;padding:7px 16px;border-radius:6px;cursor:pointer;font-size:0.82rem;font-family:'DM Sans',sans-serif;">Өндөр</button></div></div>
+            <button style="background:#1a2235;border:1px solid #2a3550;color:#fff;padding:9px 20px;border-radius:8px;cursor:pointer;font-size:0.85rem;font-family:'DM Sans',sans-serif;" onclick="showNotif('Хадмал','Тохиргоо reset хийгдлээ!')">Reset хийх</button>
+          </div>
+          <!-- Preview -->
+          <div>
+            <div style="background:linear-gradient(135deg,#1a3a5c,#3a1a5c);border-radius:12px;aspect-ratio:16/9;display:flex;align-items:flex-end;justify-content:center;padding:20px;position:relative;overflow:hidden;">
+              <div style="position:absolute;inset:0;background:url('https://images.unsplash.com/photo-1518676590629-3dcbd9c5a5c9?w=400&q=60') center/cover;opacity:0.5;"></div>
+              <div style="position:relative;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);padding:8px 16px;border-radius:6px;font-size:0.9rem;text-align:center;max-width:80%;">Амьдрал утгагүй гэдэгт итгэдэг ч, өөрийнхөө итгэл үнэмшлийн зориг надад хүрэлцдэггүй.</div>
+              <div style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.2);border-radius:4px;padding:4px 8px;font-size:0.65rem;cursor:pointer;">⛶</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DEVICES -->
+      <div id="sec-devices">
+        <h1 style="font-size:2.5rem;font-weight:800;margin-bottom:24px;">Devices</h1>
+        <div style="background:#111827;border-radius:12px;padding:20px 24px;border:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between;">
+          <div style="font-size:1rem;font-weight:600;">Devices</div>
+          <button style="background:#1a2235;border:1px solid #2a3550;color:#fff;padding:7px 16px;border-radius:6px;cursor:pointer;font-size:0.82rem;font-family:'DM Sans',sans-serif;" onclick="showNotif('Devices','Шинэчлэгдлээ!')">Refresh</button>
+        </div>
+        <div style="margin-top:20px;background:#111827;border-radius:12px;padding:20px 24px;border:1px solid rgba(255,255,255,0.06);">
+          <div style="font-size:0.85rem;color:#8892a4;">Одоогоор холбогдсон төхөөрөмж олдсонгүй.</div>
+        </div>
+      </div>
+
+      <!-- REFERRAL -->
+      <div id="sec-referral">
+        <h1 style="font-size:2.5rem;font-weight:800;margin-bottom:8px;">Урилгын хөтөлбөр</h1>
+        <div style="background:#111827;border-radius:12px;padding:28px;border:1px solid rgba(255,255,255,0.06);margin-bottom:24px;">
+          <div style="font-size:1.1rem;font-weight:700;margin-bottom:8px;">Хамтарч ажиллах</div>
+          <div style="font-size:0.85rem;color:#8892a4;margin-bottom:24px;line-height:1.6;">Хэрвээ та контент бүтээгч бол StreamMN-тэй хамтарч ажиллан тогтмол өндөр орлоготой болоорой.</div>
+          <div style="font-size:1rem;font-weight:700;margin-bottom:8px;">Хамтрах хүсэлт илгээх</div>
+          <div style="font-size:0.82rem;color:#8892a4;margin-bottom:16px;">Доорх мэдээллийг бөглөж хүсэлтээ илгээнэ үү. Админ хянасны дараа таны код идэвхжинэ.</div>
+          <div style="margin-bottom:14px;"><div style="font-size:0.8rem;color:#8892a4;margin-bottom:6px;">Урилгын код (6 тэмдэгт, үсэг эсвэл тоо)</div><input type="text" placeholder="Ж.Нь: BDRJIM" maxlength="6" style="width:100%;background:#1a2235;border:1px solid #2a3550;border-radius:8px;padding:12px 16px;color:#fff;font-size:0.9rem;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='#7c3aed'" onblur="this.style.borderColor='#2a3550'"/></div>
+          <div style="margin-bottom:14px;"><div style="font-size:0.8rem;color:#8892a4;margin-bottom:6px;">Холбоо барих Telegram үлдээнэ үү</div><input type="text" placeholder="@username эсвэл утасны дугаар" style="width:100%;background:#1a2235;border:1px solid #2a3550;border-radius:8px;padding:12px 16px;color:#fff;font-size:0.9rem;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='#7c3aed'" onblur="this.style.borderColor='#2a3550'"/></div>
+          <div style="margin-bottom:14px;"><div style="font-size:0.8rem;color:#8892a4;margin-bottom:6px;">Контент байршуулдаг хуудас (заавал биш)</div><input type="text" placeholder="Facebook, YouTube, TikTok холбоос..." style="width:100%;background:#1a2235;border:1px solid #2a3550;border-radius:8px;padding:12px 16px;color:#fff;font-size:0.9rem;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='#7c3aed'" onblur="this.style.borderColor='#2a3550'"/></div>
+          <div style="margin-bottom:20px;"><div style="font-size:0.8rem;color:#8892a4;margin-bottom:6px;">Нэмэлт тайлбар (заавал биш)</div><textarea placeholder="Өөрийн тухай товч танилцуулга..." rows="3" style="width:100%;background:#1a2235;border:1px solid #2a3550;border-radius:8px;padding:12px 16px;color:#fff;font-size:0.88rem;font-family:'DM Sans',sans-serif;outline:none;resize:none;" onfocus="this.style.borderColor='#7c3aed'" onblur="this.style.borderColor='#2a3550'"></textarea></div>
+          <button onclick="showNotif('StreamMN','Хүсэлт амжилттай илгээгдлээ! Удахгүй хариу өгнө.')" style="width:100%;background:#7c3aed;color:#fff;padding:14px;border-radius:8px;border:none;font-size:0.95rem;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Хүсэлт илгээх</button>
+          <div style="margin-top:20px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.06);">
+            <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#555;margin-bottom:10px;">ХЭРХЭН АЖИЛЛАДАГ ВЭ</div>
+            <ul style="font-size:0.82rem;color:#8892a4;line-height:1.8;padding-left:18px;">
+              <li>Хүсэлтээ илгээгээд админ зөвшөөрөхийг хүлээнэ үү</li>
+              <li>Хүсэлт зөвшөөрөгдсөний дараа дараагийн хуудаснаас хэдэн хүн эрх авсан та хэдэн төгрөг олсоноо харах боломжтой</li>
+              <li>Зөвшөөрөгдсний дараа кодоо найзуудтайгаа хуваалцаарай</li>
+              <li>Хэрэглэгчид кодыг ашиглан 10% хөнгөлөлт авна</li>
+              <li>Та өөрийн түвшингээс хамааран 10–20% шимтгэл олно</li>
+              <li>Хүссэн үедээ орлогоо банкны данс руугаа татан авах боломжтой</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div style="background:#000;border-top:1px solid #111;padding:20px 48px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+    <div style="display:flex;align-items:center;gap:8px;"><div class="logo-icon">S</div><div class="logo-text">StreamMN</div><span style="font-size:0.78rem;color:#555;margin-left:8px;">Хүссэн кино, цуврал, аниме хэзээ ч хаанаас ч үзээрэй! (ʘ‿ʘ)</span></div>
+    <div style="font-size:0.75rem;color:#333;text-align:right;line-height:1.5;">Анхаар: StreamMN нь ямар ч файл өөрөө байршуулдаггүй, зөвхөн гуравдагч талын<br/>provider-уудаас контентыг харуулдаг. Хуулийн эрх зүйн асуудлыг тэдэнтэй<br/>шийдвэрлэнэ үү. <span style="color:#7c3aed;">Санамж ¯\(ツ)/¯</span></div>
+  </div>
+</div>
+<div id="playerPage" style="display:none;position:fixed;inset:0;background:#000;z-index:2000;flex-direction:column;">
+
+  <!-- Top bar — auto-hides, pointer-events only when visible -->
+  <div id="playerTopBar" style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;position:absolute;top:0;left:0;right:0;z-index:30;background:linear-gradient(to bottom,rgba(0,0,0,0.85),transparent);transition:opacity 0.3s;pointer-events:auto;">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <button onclick="closePlayerPage()" style="background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.15);color:#fff;cursor:pointer;font-size:0.85rem;padding:6px 14px;border-radius:6px;display:flex;align-items:center;gap:5px;">← Буцах</button>
+      <span id="playerPageTitle" style="font-size:0.88rem;color:rgba(255,255,255,0.8);font-weight:500;max-width:400px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <!-- CC Button -->
+      <button onclick="toggleCCPanel()" style="background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.2);color:#fff;padding:5px 12px;border-radius:5px;cursor:pointer;font-size:0.8rem;font-weight:600;" title="Хадмал">CC 🇲🇳</button>
+      <!-- Server switcher -->
+      <div id="fullServerRow" style="display:flex;gap:6px;"></div>
+      <!-- Fullscreen -->
+      <button onclick="tryFullscreen()" style="background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.2);color:#fff;width:32px;height:32px;border-radius:5px;cursor:pointer;font-size:0.9rem;">⛶</button>
+      <div style="display:flex;align-items:center;gap:6px;opacity:0.6;">
+        <div style="width:22px;height:22px;background:linear-gradient(135deg,#3d4fd1,#1a237e);border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',cursive;font-size:0.7rem;">S</div>
+        <span style="font-family:'Bebas Neue',cursive;font-size:0.85rem;letter-spacing:2px;">StreamMN</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CC / Subtitle Panel -->
+  <div id="ccPanel" style="display:none;position:absolute;top:60px;right:18px;z-index:40;background:rgba(10,12,24,0.97);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:16px 18px;min-width:220px;backdrop-filter:blur(10px);">
+    <div style="font-size:0.8rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">Хадмал / Subtitles</div>
+    <div style="display:flex;flex-direction:column;gap:6px;" id="cc-options">
+      <div onclick="selectCC('mn',this)" style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;cursor:pointer;background:rgba(124,58,237,0.2);border:1px solid rgba(124,58,237,0.4);">
+        <span>🇲🇳</span><span style="font-size:0.88rem;">Монгол</span><span style="margin-left:auto;color:#a78bfa;font-size:0.75rem;">✓ Идэвхтэй</span>
+      </div>
+      <div onclick="selectCC('en',this)" style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='transparent'">
+        <span>🇺🇸</span><span style="font-size:0.88rem;">English</span>
+      </div>
+      <div onclick="selectCC('off',this)" style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='transparent'">
+        <span>🚫</span><span style="font-size:0.88rem;">Хадмалгүй</span>
+      </div>
+    </div>
+    <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06);">
+      <div style="font-size:0.75rem;color:#555;margin-bottom:8px;">Серверийг сол</div>
+      <div id="ccServerBtns" style="display:flex;flex-direction:column;gap:5px;"></div>
+    </div>
+  </div>
+
+  <!-- IFRAME — takes full space, z-index 1 so controls overlay it -->
+  <iframe id="fullPlayerIframe"
+    allowfullscreen
+    allow="autoplay; fullscreen; picture-in-picture"
+    sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
+    style="position:absolute;inset:0;width:100%;height:100%;border:none;z-index:1;"
+    onload="onIframeLoad(this)">
+  </iframe>
+
+  <!-- Auto-fallback overlay — shown when server fails -->
+  <div id="serverFallbackOverlay" style="display:none;position:absolute;inset:0;z-index:20;background:rgba(0,0,0,0.92);align-items:center;justify-content:center;flex-direction:column;gap:16px;">
+    <div style="font-size:2rem;">⚠️</div>
+    <div style="font-size:1rem;font-weight:700;color:#fff;" id="fallbackMsg">Server ажиллахгүй байна</div>
+    <div style="font-size:0.82rem;color:#8892a4;" id="fallbackSub">Дараагийн server-рүү шилжиж байна...</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:8px;" id="fallbackServerBtns"></div>
+    <button onclick="closeFallbackOverlay()" style="margin-top:4px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#aaa;padding:7px 18px;border-radius:6px;cursor:pointer;font-size:0.78rem;font-family:'DM Sans',sans-serif;">✕ Хаах</button>
+  </div>
+
+  <!-- Subtitle prompt popup — top center, pointer-events only on itself -->
+  <div id="subtitlePopup" style="display:none;position:absolute;top:68px;left:50%;transform:translateX(-50%);background:rgba(10,12,24,0.97);border-radius:12px;padding:16px 20px;max-width:500px;width:90%;z-index:35;border:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(8px);">
+    <div style="font-weight:700;font-size:0.92rem;margin-bottom:6px;">Энэ хадмал кинотой таарч байна уу?</div>
+    <div style="font-size:0.8rem;color:#8892a4;margin-bottom:12px;line-height:1.5;">Хэрэв энэ Англи хадмал кинотой таарч байвал "Монгол хадмал үүсгэх" дээр дарна уу.</div>
+    <div id="sub-progress-wrap" style="display:none;margin-bottom:12px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
+        <span style="font-size:0.8rem;color:#ccc;display:flex;align-items:center;gap:6px;"><span style="width:8px;height:8px;border-radius:50%;background:#7c3aed;display:inline-block;animation:pulse 1s ease-in-out infinite;"></span>Орчуулж байна...</span>
+        <span style="font-size:0.8rem;color:#ccc;" id="sub-pct">0%</span>
+      </div>
+      <div style="background:rgba(255,255,255,0.1);border-radius:3px;height:3px;overflow:hidden;">
+        <div id="sub-bar" style="height:100%;width:0%;background:linear-gradient(to right,#7c3aed,#3d4fd1);border-radius:3px;transition:width 0.3s;"></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;" id="sub-btns">
+      <button onclick="startSubtitleCreation(this)" style="background:#3d4fd1;color:#fff;padding:8px 16px;border-radius:7px;border:none;font-size:0.82rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Монгол хадмал үүсгэх</button>
+      <button onclick="closeSubtitlePopup()" style="background:rgba(255,255,255,0.08);color:#fff;padding:8px 14px;border-radius:7px;border:1px solid rgba(255,255,255,0.12);font-size:0.82rem;cursor:pointer;font-family:'DM Sans',sans-serif;">Өөр хадмал сонгох</button>
+      <button onclick="closeSubtitlePopup()" style="background:none;border:none;color:#666;cursor:pointer;font-size:0.9rem;padding:8px 4px;">✕</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- NOTIFICATION -->
+<div class="notif" id="notif"><strong id="notifTitle"></strong><span id="notifMsg"></span></div>
+
+<!-- LOGIN MODAL (MNFlix style) -->
+<div class="modal-overlay" id="loginModal" style="display:none;z-index:1100;" onclick="if(event.target===this)closeLogin()">
+  <div style="background:#111827;border-radius:16px;width:100%;max-width:480px;padding:36px 40px 32px;position:relative;border:1px solid rgba(255,255,255,0.07);box-shadow:0 40px 80px rgba(0,0,0,0.8);">
+
+    <!-- Close -->
+    <button onclick="closeLogin()" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.06);border:none;color:#aaa;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.12)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'">✕</button>
+
+    <!-- Logo -->
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:24px;">
+      <div style="width:30px;height:30px;background:linear-gradient(135deg,#3d4fd1,#1a237e);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',cursive;font-size:1rem;color:#fff;">S</div>
+      <span style="font-family:'Bebas Neue',cursive;font-size:1.1rem;letter-spacing:2px;">StreamMN</span>
+    </div>
+
+    <!-- Tabs: Login / Register -->
+    <div style="display:flex;border-bottom:1px solid rgba(255,255,255,0.08);margin-bottom:28px;">
+      <div id="login-tab" onclick="switchAuthTab('login')" style="flex:1;text-align:center;padding:10px;font-size:0.9rem;font-weight:600;cursor:pointer;border-bottom:2px solid #3d4fd1;color:#fff;transition:all 0.2s;">Нэвтрэх</div>
+      <div id="register-tab" onclick="switchAuthTab('register')" style="flex:1;text-align:center;padding:10px;font-size:0.9rem;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;color:#8892a4;transition:all 0.2s;">Бүртгүүлэх</div>
+    </div>
+
+    <!-- LOGIN PANEL -->
+    <div id="auth-login">
+      <h2 style="font-size:1.8rem;font-weight:700;text-align:center;margin-bottom:8px;">Бүртгэлдээ нэвтрэх</h2>
+      <p style="font-size:0.85rem;color:#8892a4;text-align:center;margin-bottom:28px;line-height:1.5;">Та StreamMN-д нэвтэрснээр бүх кино, цувралыг<br/>хязгааргүй үзэх эрх чөлөөг өөрийн болгоорой.</p>
+
+      <div style="margin-bottom:18px;">
+        <label style="display:block;font-size:0.88rem;font-weight:600;margin-bottom:8px;">Имэйл хаяг</label>
+        <input id="login-email" type="email" placeholder="Имэйл хаягаа оруулна уу" style="width:100%;background:#1e2740;border:1px solid #2a3550;border-radius:10px;padding:14px 16px;color:#fff;font-size:0.9rem;font-family:'DM Sans',sans-serif;outline:none;transition:border-color 0.2s;" onfocus="this.style.borderColor='#3d4fd1'" onblur="this.style.borderColor='#2a3550'"/>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <label style="display:block;font-size:0.88rem;font-weight:600;margin-bottom:8px;">Нууц үг</label>
+        <div style="position:relative;">
+          <input id="login-pw" type="password" placeholder="Нууц үгээ оруулна уу" style="width:100%;background:#1e2740;border:1px solid #2a3550;border-radius:10px;padding:14px 48px 14px 16px;color:#fff;font-size:0.9rem;font-family:'DM Sans',sans-serif;outline:none;transition:border-color 0.2s;" onfocus="this.style.borderColor='#3d4fd1'" onblur="this.style.borderColor='#2a3550'"/>
+          <button onclick="toggleLoginPw()" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:#8892a4;cursor:pointer;font-size:1rem;">👁</button>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.85rem;color:#8892a4;">
+          <input type="checkbox" id="remember-me" style="accent-color:#3d4fd1;width:15px;height:15px;cursor:pointer;"/>
+          Намайг сана
+        </label>
+        <span style="font-size:0.85rem;font-weight:600;color:#fff;cursor:pointer;" onclick="showNotif('StreamMN','Нууц үг сэргээх имэйл илгээлээ!')">Нууц үг сэргээх</span>
+      </div>
+
+      <button onclick="doLogin()" style="width:100%;background:#3d4fd1;color:#fff;padding:15px;border-radius:10px;border:none;font-size:1rem;font-weight:700;cursor:pointer;transition:background 0.2s;font-family:'DM Sans',sans-serif;" onmouseover="this.style.background='#2f3db8'" onmouseout="this.style.background='#3d4fd1'">Нэвтрэх</button>
+
+      <p style="text-align:center;font-size:0.85rem;color:#8892a4;margin-top:20px;">
+        Одоохондоо бүртгэлгүй юу 🙂
+        <span onclick="switchAuthTab('register')" style="color:#3d88f5;font-weight:600;cursor:pointer;margin-left:4px;">Бүртгэл үүсгээрэй</span>
+      </p>
+    </div>
+
+    <!-- REGISTER PANEL -->
+    <div id="auth-register" style="display:none;">
+      <h2 style="font-size:1.8rem;font-weight:700;text-align:center;margin-bottom:8px;">Бүртгэл үүсгэх</h2>
+      <p style="font-size:0.85rem;color:#8892a4;text-align:center;margin-bottom:24px;line-height:1.5;">StreamMN-д бүртгүүлж үнэгүй үзэж эхлээрэй.</p>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+        <div>
+          <label style="display:block;font-size:0.85rem;font-weight:600;margin-bottom:6px;">Нэр</label>
+          <input type="text" placeholder="Таны нэр" style="width:100%;background:#1e2740;border:1px solid #2a3550;border-radius:10px;padding:13px 14px;color:#fff;font-size:0.88rem;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='#3d4fd1'" onblur="this.style.borderColor='#2a3550'"/>
+        </div>
+        <div>
+          <label style="display:block;font-size:0.85rem;font-weight:600;margin-bottom:6px;">Овог</label>
+          <input type="text" placeholder="Таны овог" style="width:100%;background:#1e2740;border:1px solid #2a3550;border-radius:10px;padding:13px 14px;color:#fff;font-size:0.88rem;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='#3d4fd1'" onblur="this.style.borderColor='#2a3550'"/>
+        </div>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label style="display:block;font-size:0.85rem;font-weight:600;margin-bottom:6px;">Имэйл хаяг</label>
+        <input id="reg-email" type="email" placeholder="Имэйл хаягаа оруулна уу" style="width:100%;background:#1e2740;border:1px solid #2a3550;border-radius:10px;padding:13px 16px;color:#fff;font-size:0.88rem;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='#3d4fd1'" onblur="this.style.borderColor='#2a3550'"/>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label style="display:block;font-size:0.85rem;font-weight:600;margin-bottom:6px;">Нууц үг</label>
+        <div style="position:relative;">
+          <input id="reg-pw" type="password" placeholder="Нууц үг үүсгэнэ үү" style="width:100%;background:#1e2740;border:1px solid #2a3550;border-radius:10px;padding:13px 48px 13px 16px;color:#fff;font-size:0.88rem;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='#3d4fd1'" onblur="this.style.borderColor='#2a3550'" oninput="checkPwStrength(this.value)"/>
+          <button onclick="toggleRegPw()" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:#8892a4;cursor:pointer;">👁</button>
+        </div>
+        <!-- Strength bars -->
+        <div style="display:flex;gap:4px;margin-top:8px;" id="pw-bars">
+          <div id="pwb1" style="flex:1;height:3px;border-radius:2px;background:#1e2740;transition:background 0.3s;"></div>
+          <div id="pwb2" style="flex:1;height:3px;border-radius:2px;background:#1e2740;transition:background 0.3s;"></div>
+          <div id="pwb3" style="flex:1;height:3px;border-radius:2px;background:#1e2740;transition:background 0.3s;"></div>
+          <div id="pwb4" style="flex:1;height:3px;border-radius:2px;background:#1e2740;transition:background 0.3s;"></div>
+        </div>
+        <div id="pw-strength-label" style="font-size:0.72rem;color:#8892a4;margin-top:4px;"></div>
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:0.82rem;color:#8892a4;line-height:1.4;">
+          <input type="checkbox" id="terms-check" style="accent-color:#3d4fd1;width:15px;height:15px;cursor:pointer;margin-top:2px;flex-shrink:0;"/>
+          <span><span style="color:#fff;">Үйлчилгээний нөхцөл</span> болон <span style="color:#fff;">Нууцлалын бодлого</span>-той зөвшөөрч байна</span>
+        </label>
+      </div>
+
+      <button onclick="doRegister()" style="width:100%;background:#3d4fd1;color:#fff;padding:15px;border-radius:10px;border:none;font-size:1rem;font-weight:700;cursor:pointer;transition:background 0.2s;font-family:'DM Sans',sans-serif;" onmouseover="this.style.background='#2f3db8'" onmouseout="this.style.background='#3d4fd1'">Бүртгүүлэх</button>
+
+      <p style="text-align:center;font-size:0.85rem;color:#8892a4;margin-top:16px;">
+        Аль хэдийн бүртгэлтэй юу?
+        <span onclick="switchAuthTab('login')" style="color:#3d88f5;font-weight:600;cursor:pointer;margin-left:4px;">Нэвтрэх</span>
+      </p>
+    </div>
+
+    <!-- SUCCESS PANEL -->
+    <div id="auth-success" style="display:none;text-align:center;padding:20px 0;">
+      <div style="width:64px;height:64px;border-radius:50%;background:rgba(61,79,209,0.15);border:2px solid #3d4fd1;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:1.8rem;">✓</div>
+      <h2 style="font-size:1.6rem;font-weight:700;margin-bottom:8px;" id="success-title">Тавтай морил!</h2>
+      <p style="font-size:0.88rem;color:#8892a4;line-height:1.6;margin-bottom:24px;" id="success-msg">StreamMN-д амжилттай нэвтэрлээ.</p>
+      <button onclick="onLoginSuccess()" style="background:#3d4fd1;color:#fff;padding:13px 32px;border-radius:10px;border:none;font-size:0.95rem;font-weight:700;cursor:pointer;">Үзэж эхлэх →</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const API_KEY = '5d87703e9f8c28c9ca1d19646141c3a7';
+const BASE    = 'https://api.themoviedb.org/3';
+const IMG     = 'https://image.tmdb.org/t/p/';
+
+// Multiple CORS proxies for reliability
+const PROXIES = [
+  url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+  url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+  url => `https://cors-anywhere.herokuapp.com/${url}`,
+];
+
+async function tmdb(path, params={}) {
+  const q = new URLSearchParams({api_key: API_KEY, language:'en-US', ...params});
+  const directUrl = `${BASE}${path}?${q}`;
+
+  // 1. Try direct (works on localhost and hosted servers)
+  try {
+    const r = await fetch(directUrl, {mode:'cors'});
+    if(r.ok) {
+      const data = await r.json();
+      if(data.results !== undefined || data.id) return data;
+    }
+  } catch(e) {}
+
+  // 2. Try each proxy in order
+  for(const makeProxy of PROXIES) {
+    try {
+      const r = await fetch(makeProxy(directUrl));
+      if(r.ok) {
+        const data = await r.json();
+        if(data.results !== undefined || data.id) return data;
+      }
+    } catch(e) {}
+  }
+
+  console.warn('All TMDB requests failed for:', path);
+  return {results:[], total_results:0};
+}
+
+// Build embed URL with Mongolian subtitle hint — prevent duplicate params
+function mkUrl(base) {
+  if(base.includes('sub_lang=')) return base;
+  return base + (base.includes('?') ? '&' : '?') + 'sub_lang=mn&lang=mn&autoplay=1';
+}
+
+const SERVERS = [
+  {name:'Server 1 (VidSrc)',    url: id => mkUrl(`https://vidsrc.me/embed/movie?tmdb=${id}`)},
+  {name:'Server 2 (2Embed)',    url: id => mkUrl(`https://www.2embed.stream/embed/movie/${id}`)},
+  {name:'Server 3 (VidSrc.cc)', url: id => mkUrl(`https://vidsrc.cc/v2/embed/movie/${id}`)},
+  {name:'Server 4 (VidSrc.to)', url: id => mkUrl(`https://vidsrc.to/embed/movie/${id}`)},
+];
+const TV_SERVERS = [
+  {name:'Server 1 (VidSrc)',    url: (id,s,e) => mkUrl(`https://vidsrc.me/embed/tv?tmdb=${id}&season=${s}&episode=${e}`)},
+  {name:'Server 2 (2Embed)',    url: (id,s,e) => mkUrl(`https://www.2embed.stream/embed/tv/${id}/${s}/${e}`)},
+  {name:'Server 3 (VidSrc.cc)', url: (id,s,e) => mkUrl(`https://vidsrc.cc/v2/embed/tv/${id}/${s}/${e}`)},
+  {name:'Server 4 (VidSrc.to)', url: (id,s,e) => mkUrl(`https://vidsrc.to/embed/tv/${id}/${s}/${e}`)},
+];
+
+let heroMovies = [], heroIndex = 0, heroTimer = null;
+let currentMovie = null, currentType = 'movie';
+
+const GENRE_MAP = {28:'Экшн',12:'Адал явдал',16:'Анимэ',35:'Инээдмийн',80:'Гэмт хэрэг',99:'Баримтат',18:'Драм',10751:'Гэр бүл',14:'Фэнтэзи',36:'Түүх',27:'Аймшиг',10402:'Хөгжим',9648:'Нууц',10749:'Хайр дурлал',878:'Фантастик',10770:'ТВ',53:'Триллер',10752:'Дайн',37:'Вестерн'};
+
+// ─── NETFLIX-STYLE HERO ─────────────────────────────────
+async function loadHero() {
+  try {
+    const data = await tmdb('/trending/movie/week');
+    heroMovies = (data.results || []).filter(m => m.backdrop_path).slice(0, 8);
+    if (!heroMovies.length) return;
+    buildHeroDots();
+    showHeroMovie(0);
+    heroTimer = setInterval(() => {
+      heroIndex = (heroIndex + 1) % heroMovies.length;
+      showHeroMovie(heroIndex);
+    }, 8000);
+  } catch(e) { console.log('Hero load error', e); }
+}
+
+function showHeroMovie(idx) {
+  const m = heroMovies[idx];
+  if (!m) return;
+  heroIndex = idx;
+
+  // Background
+  const bg = document.getElementById('heroBg');
+  bg.style.backgroundImage = `url(https://image.tmdb.org/t/p/original${m.backdrop_path})`;
+
+  // Movie info
+  document.getElementById('heroMovieTitle').textContent = m.title || m.name || '';
+  document.getElementById('heroMovieDesc').textContent = m.overview || '';
+  document.getElementById('heroYear').textContent = (m.release_date || m.first_air_date || '').slice(0,4);
+  document.getElementById('heroRating').textContent = `⭐ ${m.vote_average?.toFixed(1) || '?'}`;
+
+  // Genres
+  const genres = (m.genre_ids || []).slice(0,3).map(id => GENRE_MAP[id]).filter(Boolean);
+  document.getElementById('heroGenres').innerHTML = genres.map(g=>`<span class="hero-movie-genre-tag">${g}</span>`).join('');
+
+  // Buttons
+  document.getElementById('heroWatchBtn').onclick = () => openPlayer(m.id, m.title||m.name, 'movie', m.poster_path, m.vote_average, m.overview);
+  document.getElementById('heroInfoBtn').onclick = () => openPlayer(m.id, m.title||m.name, 'movie', m.poster_path, m.vote_average, m.overview);
+
+  // Show info with animation
+  const info = document.getElementById('heroMovieInfo');
+  info.classList.remove('visible');
+  info.style.animation = 'none';
+  setTimeout(() => {
+    info.classList.add('visible');
+    info.style.animation = 'heroFadeIn 0.8s ease forwards';
+  }, 100);
+
+  // Update dots
+  document.querySelectorAll('.hero-dot').forEach((d,i) => d.classList.toggle('active', i===idx));
+}
+
+function buildHeroDots() {
+  const dots = document.getElementById('heroDots');
+  dots.innerHTML = heroMovies.map((_, i) =>
+    `<div class="hero-dot${i===0?' active':''}" onclick="showHeroMovie(${i});clearInterval(heroTimer);heroTimer=setInterval(()=>{heroIndex=(heroIndex+1)%heroMovies.length;showHeroMovie(heroIndex);},8000);"></div>`
+  ).join('');
+}
+
+// ─── FLOATING ICONS (like MNFlix) ──────────────────────────
+const FLOAT_ICONS = ['🎬','🎭','🍿','📽️','🎞️','⭐','🎪','🎦','📺','🎥','🏆','🎟️'];
+function spawnFloatingIcons() {
+  const container = document.getElementById('heroIcons');
+  FLOAT_ICONS.forEach((icon, i) => {
+    const el = document.createElement('div');
+    el.className = 'hero-icon';
+    el.textContent = icon;
+    el.style.cssText = `
+      left:${8 + Math.random()*84}%;
+      top:${5 + Math.random()*80}%;
+      font-size:${1.2 + Math.random()*1.8}rem;
+      animation-delay:${Math.random()*6}s;
+      animation-duration:${6 + Math.random()*6}s;
+    `;
+    container.appendChild(el);
+  });
+}
+spawnFloatingIcons();
+
+// ─── CONTENT TABS ──────────────────────────────────────────
+let currentContentType = 'movie';
+function switchContentTab(type, el) {
+  currentContentType = type;
+  document.querySelectorAll('.ctab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  if(type === 'movie') {
+    document.getElementById('heroTitle').textContent = 'Та өнөө орой юу үзмээр байна?';
+    loadMovieRows();
+  } else if(type === 'tv') {
+    document.getElementById('heroTitle').textContent = 'Та өнөө орой аль цувралыг үзмээр байна?';
+    loadTVRows();
+  } else if(type === '18') {
+    document.getElementById('heroTitle').textContent = 'Насанд хүрэгчдэд зориулсан контент';
+    filterGenre(27, 'Horror / 18+');
+  }
+}
+
+async function loadMovieRows() {
+  ['trending','movies','nowplaying'].forEach(id=>{
+    const el=document.getElementById(`row-${id}`); if(el) el.innerHTML=makeSkeleton();
+  });
+  const [trending, movies, np] = await Promise.all([
+    tmdb('/trending/movie/week'),
+    tmdb('/movie/popular'),
+    tmdb('/movie/now_playing'),
+  ]);
+  const tc=(trending.results||[]).map(m=>renderCard(m,'movie')).join('');
+  const mc=(movies.results||[]).map(m=>renderCard(m,'movie')).join('');
+  const nc=(np.results||[]).map(m=>renderWideCard(m,'movie')).join('');
+  if(tc){document.getElementById('row-trending').innerHTML=tc;buildTop10(trending.results||[]);}else showRowError('row-trending');
+  if(mc) document.getElementById('row-movies').innerHTML=mc; else showRowError('row-movies');
+  if(nc) document.getElementById('row-nowplaying').innerHTML=nc; else showRowError('row-nowplaying');
+}
+
+async function loadTVRows() {
+  ['trending','movies','nowplaying'].forEach(id=>{
+    const el=document.getElementById(`row-${id}`); if(el) el.innerHTML=makeSkeleton();
+  });
+  const [tv, top, air] = await Promise.all([
+    tmdb('/tv/popular'),
+    tmdb('/tv/top_rated'),
+    tmdb('/tv/on_the_air'),
+  ]);
+  const tc=(tv.results||[]).map(m=>renderCard(m,'tv')).join('');
+  const rc=(top.results||[]).map(m=>renderCard(m,'tv')).join('');
+  const ac=(air.results||[]).map(m=>renderWideCard(m,'tv')).join('');
+  if(tc){document.getElementById('row-trending').innerHTML=tc;buildTop10(tv.results||[]);}else showRowError('row-trending');
+  if(rc) document.getElementById('row-movies').innerHTML=rc; else showRowError('row-movies');
+  if(ac) document.getElementById('row-nowplaying').innerHTML=ac; else showRowError('row-nowplaying');
+}
+
+function buildTop10(results) {
+  const top10el = document.getElementById('top10-grid');
+  if(!top10el) return;
+  top10el.innerHTML = (results||[]).slice(0,10).map((m,i)=>{
+    const title = m.title||m.name||'Unknown';
+    const year  = (m.release_date||m.first_air_date||'').slice(0,4);
+    const rating= m.vote_average ? m.vote_average.toFixed(1) : '?';
+    const poster= imgUrl(m.poster_path,'w185');
+    const type  = m.title ? 'movie' : 'tv';
+    const safeTitle = title.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `<div class="t10" onclick="openPlayer(${m.id},'${type}','${safeTitle}','${m.poster_path||''}',${m.vote_average||0})">
+      <div class="t10-num">${i+1}</div>
+      <img class="t10-thumb" src="${poster}" alt="" loading="lazy"/>
+      <div>
+        <div class="t10-title">${title}</div>
+        <div class="t10-meta">${year} · ${type==='tv'?'Цуврал':'Кино'}</div>
+        <div class="t10-rating">★ ${rating}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── FETCH HELPERS ─────────────────────────────────────────
+// ─── BLOCK ALL POPUPS / NEW TAB REDIRECTS ──────────────────
+window.open = function() { return null; };
+
+// ─── FETCH HELPERS (tmdb defined above) ─────────────────────────────────────────
+
+function imgUrl(path, size='w500') {
+  return path ? `${IMG}${size}${path}` : 'https://via.placeholder.com/300x450/141b2d/3d4fd1?text=No+Image';
+}
+
+function makeSkeleton(count=8) {
+  return Array(count).fill(0).map(()=>`
+    <div class="skeleton-card" style="flex-shrink:0;width:148px;">
+      <div style="aspect-ratio:2/3;background:linear-gradient(90deg,#141b2d 25%,#1a2235 50%,#141b2d 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:7px;"></div>
+      <div style="height:10px;background:#141b2d;border-radius:4px;margin:8px 9px 3px;animation:shimmer 1.4s infinite;"></div>
+      <div style="height:8px;width:60%;background:#141b2d;border-radius:4px;margin:0 9px 10px;animation:shimmer 1.4s infinite;"></div>
+    </div>`).join('');
+}
+function renderCard(item, type='movie') {
+  const title = item.title || item.name || 'Unknown';
+  const year  = (item.release_date||item.first_air_date||'').slice(0,4);
+  const rating= item.vote_average ? item.vote_average.toFixed(1) : '?';
+  const poster= imgUrl(item.poster_path,'w300');
+  const isNew = year >= '2024';
+  const isTop = item.vote_average >= 8;
+  // Safe title for onclick: escape backslash first, then quotes
+  const safeTitle = title.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+  return `
+  <div class="mcard" onclick="openPlayer(${item.id},'${type}','${safeTitle}','${item.poster_path||''}',${item.vote_average||0})">
+    <div class="mcard-thumb">
+      <img src="${poster}" alt="" loading="lazy" onerror="this.src='https://via.placeholder.com/300x450/1a1a1a/555?text=No+Poster'"/>
+      ${isNew?'<span class="mcard-badge badge-new">NEW</span>':isTop?'<span class="mcard-badge badge-top">TOP</span>':''}
+      <div class="mcard-overlay">
+        <div class="mcard-play"><div class="ptri"></div></div>
+        <div class="mcard-title-ov">${title}</div>
+        <div class="mcard-meta-ov">${year} · ${type==='tv'?'Цуврал':'Кино'}</div>
+      </div>
+    </div>
+    <div class="mcard-info">
+      <div class="mcard-name">${title}</div>
+      <div class="mcard-year"><span class="mcard-rating">★ ${rating}</span><span>${year}</span></div>
+    </div>
+  </div>`;
+}
+
+function renderWideCard(item, type='movie') {
+  const title    = item.title || item.name || 'Unknown';
+  const year     = (item.release_date||item.first_air_date||'').slice(0,4);
+  const rating   = item.vote_average ? item.vote_average.toFixed(1) : '?';
+  const backdrop = imgUrl(item.backdrop_path,'w500');
+  const safe     = title.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  return `
+  <div class="wcard" onclick="openPlayer(${item.id},'${type}','${safe}','${item.poster_path||''}',${item.vote_average||0})">
+    <div class="wcard-thumb">
+      <img src="${backdrop}" alt="" loading="lazy" onerror="this.style.display='none'"/>
+      <div class="wcard-overlay"><div class="wcard-play"><div class="ptri"></div></div></div>
+    </div>
+    <div class="wcard-info">
+      <div class="wcard-title">${title}</div>
+      <div class="wcard-meta">★ ${rating} · ${year}</div>
+    </div>
+  </div>`;
+}
+
+// (hero rotation removed — page uses search-based hero)
+
+// ─── LOAD ALL ROWS ─────────────────────────────────────────
+function showRowError(rowId) {
+  const el = document.getElementById(rowId);
+  if(el) el.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;width:100%;padding:32px 0;color:#555;"><span style="font-size:2rem;">⚠️</span><span style="font-size:0.85rem;">Ачааллахад алдаа гарлаа</span><button onclick="loadAllRows()" style="background:#1a2235;border:1px solid #2a3550;color:#aaa;padding:7px 18px;border-radius:6px;cursor:pointer;font-size:0.82rem;font-family:'DM Sans',sans-serif;">Дахин оролдох ↺</button></div>`;
+}
+
+function setApiStatus(ok, msg) {
+  let el = document.getElementById('api-status-banner');
+  if(!el) {
+    el = document.createElement('div');
+    el.id = 'api-status-banner';
+    el.style.cssText = 'position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:9999;padding:10px 20px;border-radius:8px;font-size:0.82rem;font-family:"DM Sans",sans-serif;font-weight:600;pointer-events:none;transition:opacity 0.4s;';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.style.background = ok ? '#1D9E75' : '#c0392b';
+  el.style.color = '#fff';
+  el.style.opacity = '1';
+  if(ok) setTimeout(() => el.style.opacity = '0', 3000);
+}
+
+async function loadAllRows() {
+  ['trending','movies','tv','nowplaying'].forEach(id=>{
+    const el = document.getElementById(`row-${id}`);
+    if(el) el.innerHTML = makeSkeleton();
+  });
+  const top10el = document.getElementById('top10-grid');
+  if(top10el) top10el.innerHTML = '';
+
+  setApiStatus(null, '⟳ Кино мэдээлэл ачааллаж байна...');
+
+  const [trending, movies, tv, np] = await Promise.all([
+    tmdb('/trending/movie/week'),
+    tmdb('/movie/popular'),
+    tmdb('/tv/popular'),
+    tmdb('/movie/now_playing'),
+  ]);
+
+  const got = (trending.results||[]).length + (movies.results||[]).length +
+              (tv.results||[]).length + (np.results||[]).length;
+
+  if(got === 0) {
+    setApiStatus(false, '❌ API холбогдсонгүй — API key шалгана уу эсвэл дахин оролдоно уу');
+    ['trending','movies','tv','nowplaying'].forEach(id => showRowError(`row-${id}`));
+    return;
+  }
+
+  setApiStatus(true, `✓ ${got} кино амжилттай ачааллаа`);
+
+  const tc = (trending.results||[]).map(m=>renderCard(m,'movie')).join('');
+  const mc = (movies.results||[]).map(m=>renderCard(m,'movie')).join('');
+  const vc = (tv.results||[]).map(m=>renderCard(m,'tv')).join('');
+  const nc = (np.results||[]).map(m=>renderWideCard(m,'movie')).join('');
+
+  if(tc) { document.getElementById('row-trending').innerHTML = tc; buildTop10(trending.results||[]); }
+  else showRowError('row-trending');
+  if(mc) document.getElementById('row-movies').innerHTML = mc; else showRowError('row-movies');
+  if(vc) document.getElementById('row-tv').innerHTML = vc;     else showRowError('row-tv');
+  if(nc) document.getElementById('row-nowplaying').innerHTML = nc; else showRowError('row-nowplaying');
+}
+
+// ─── OPEN PLAYER (MNFlix style) ────────────────────────────
+let currentServerIndex = 0;
+
+async function openPlayer(id, type, titleHint, poster, rating, overview) {
+  currentMovie = {id, type, title: titleHint, poster: poster||null, rating: rating||null, overview: overview||null};
+  currentServerIndex = 0;
+
+  // Update bookmark button state
+  updateBookmarkBtn(wlIsAdded(id));
+
+  // Update watch button based on login state
+  const wb = document.getElementById('watchBtn');
+  const pt = document.getElementById('playerPlaceholderText');
+  if(isLoggedIn) {
+    wb.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg> Үзэх';
+    if(pt) pt.textContent = 'Үзэхийн тулд дарна уу';
+  } else {
+    wb.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Нэвтрэх шаардлагатай';
+    if(pt) pt.textContent = '🔒 Нэвтрэх шаардлагатай';
+  }
+  wb.onclick = handleWatchClick;
+
+  // Open modal
+  document.getElementById('playerModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  // Reset modal state
+  document.getElementById('modalTitle').textContent = titleHint;
+  document.getElementById('modalDesc').textContent = 'Loading...';
+  document.getElementById('modalBackdrop').src = '';
+  document.getElementById('modalScore').textContent = '—';
+  document.getElementById('modalYear').textContent = '—';
+  document.getElementById('modalGenres').innerHTML = '';
+
+  // Server buttons
+  const servers = type === 'tv' ? TV_SERVERS : SERVERS;
+  const serverRowEl = document.getElementById('serverRow');
+  if(serverRowEl) serverRowEl.innerHTML = servers.map((s,i)=>
+    `<button class="server-btn ${i===0?'active':''}" onclick="selectModalServer(${i},this)">${s.name}</button>`
+  ).join('');
+
+  // Fetch full details from TMDB
+  try {
+    const detail = await tmdb(`/${type}/${id}`, {append_to_response:'release_dates,content_ratings'});
+    if(!detail || !detail.id) throw new Error('No detail returned');
+    const title   = detail.title || detail.name || titleHint;
+    const year    = (detail.release_date||detail.first_air_date||'').slice(0,4);
+    const rating  = detail.vote_average ? detail.vote_average.toFixed(1) : '—';
+    const votes   = detail.vote_count ? `(${detail.vote_count.toLocaleString()})` : '';
+    const runtime = detail.runtime
+      ? `${Math.floor(detail.runtime/60)}h ${detail.runtime%60}m`
+      : detail.number_of_seasons
+        ? `${detail.number_of_seasons} season${detail.number_of_seasons>1?'s':''}`
+        : '—';
+    const lang    = (detail.original_language||'').toUpperCase() || '—';
+    const release = detail.release_date || detail.first_air_date || '—';
+    const country = (detail.production_countries||[]).map(c=>c.iso_3166_1).join(', ') || '—';
+
+    // Content rating
+    let contentRating = '—';
+    if(detail.release_dates?.results) {
+      const us = detail.release_dates.results.find(r=>r.iso_3166_1==='US');
+      if(us) { const cert = us.release_dates.find(r=>r.certification); if(cert) contentRating = cert.certification; }
+    }
+    if(detail.content_ratings?.results) {
+      const us = detail.content_ratings.results.find(r=>r.iso_3166_1==='US');
+      if(us) contentRating = us.rating;
+    }
+
+    const backdrop = imgUrl(detail.backdrop_path, 'w1280');
+    const genres   = (detail.genres||[]);
+
+    // Safe helper
+    const set = (id, val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
+    document.getElementById('modalTitle').textContent = title;
+    document.getElementById('modalBackdrop').src      = backdrop;
+    set('modalScore', rating); set('modalVotes', votes); set('modalYear', year);
+    document.getElementById('modalDesc').textContent  = detail.overview || 'No description available.';
+    set('dRuntime', runtime); set('dLang', lang); set('dRelease', release);
+    set('dRating', contentRating); set('dCountry', country);
+    document.getElementById('modalGenres').innerHTML  = genres.map(g=>`<span class="genre-tag">${g.name}</span>`).join('');
+    currentMovie.title = title;
+  } catch(e) {
+    const descEl = document.getElementById('modalDesc');
+    if(descEl) descEl.textContent = 'Could not load details. Please try again.';
+    console.warn('openPlayer detail fetch failed:', e);
+  }
+}
+
+function startPlaying() {
+  // No embedded player in modal — just trigger full player
+  handleWatchClick();
+}
+
+// Server selection in modal just sets preferred server index
+function selectModalServer(i, btn) {
+  currentServerIndex = i;
+  document.querySelectorAll('.server-btn').forEach((b,j)=>b.classList.toggle('active',j===i));
+}
+
+function setServer(i) {
+  currentServerIndex = i;
+  document.querySelectorAll('.server-btn').forEach((b,j)=>b.classList.toggle('active',j===i));
+}
+
+function closePlayer() {
+  document.getElementById('playerModal').classList.remove('open');
+  // Only reset overflow if no other modal is open
+  const loginOpen = document.getElementById('loginModal').style.display !== 'none';
+  const pricingOpen = document.getElementById('pricingModal').style.display !== 'none';
+  if(!loginOpen && !pricingOpen) document.body.style.overflow = '';
+}
+
+// ─── SEARCH ────────────────────────────────────────────────
+let searchTimer = null;
+
+function doSearch(q) {
+  clearTimeout(searchTimer);
+  const clearBtn = document.getElementById('searchClearBtn');
+  if(clearBtn) clearBtn.style.display = q ? 'block' : 'none';
+
+  if (!q || !q.trim()) {
+    hideSearchResults();
+    return;
+  }
+  // Show skeleton immediately inside hero
+  showSearchSkeleton();
+
+  searchTimer = setTimeout(async () => {
+    try {
+      const r = await tmdb('/search/multi', {query: q, page: 1});
+      const items = (r.results || []).filter(x => x.media_type !== 'person' && x.poster_path).slice(0, 18);
+      renderInlineSearch(items, q);
+    } catch(e) {
+      console.warn('Search failed:', e);
+      renderInlineSearch([], q);
+    }
+  }, 350);
+}
+
+function showSearchSkeleton() {
+  const sr = document.getElementById('searchResults');
+  const grid = document.getElementById('srGrid');
+  sr.classList.add('open');
+  // Hide tabs and movie info, show results
+  document.getElementById('contentTabs').style.display = 'none';
+  const movieInfo = document.getElementById('heroMovieInfo');
+  if(movieInfo) movieInfo.style.opacity = '0.3';
+  grid.innerHTML = `<div class="sr-skel-grid">${Array(12).fill('<div class="sr-skel"></div>').join('')}</div>`;
+}
+
+function hideSearchResults() {
+  document.getElementById('searchResults').classList.remove('open');
+  document.getElementById('contentTabs').style.display = '';
+  const movieInfo = document.getElementById('heroMovieInfo');
+  if(movieInfo) movieInfo.style.opacity = '';
+}
+
+function clearSearch() {
+  document.getElementById('bigSearchInput').value = '';
+  document.getElementById('searchClearBtn').style.display = 'none';
+  hideSearchResults();
+}
+
+function renderInlineSearch(items, q) {
+  const grid = document.getElementById('srGrid');
+
+  if (!items.length) {
+    grid.innerHTML = `<div class="sr-no-result">
+      <div style="font-size:2.5rem;margin-bottom:12px;">🎬</div>
+      <div style="font-size:0.95rem;font-weight:700;color:#fff;margin-bottom:6px;">"${q}" олдсонгүй</div>
+      <div style="font-size:0.8rem;color:#4a5568;">Өөр нэрээр хайж үзнэ үү</div>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = `<div class="sr-grid">${items.map(item => {
+    const title  = item.title || item.name || '?';
+    const year   = (item.release_date || item.first_air_date || '').slice(0, 4);
+    const type   = item.media_type === 'tv' ? 'tv' : 'movie';
+    const typeLabel = type === 'tv' ? 'Цуврал' : 'Кино';
+    const poster = `https://image.tmdb.org/t/p/w342${item.poster_path}`;
+    const safe   = title.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    const isSaved = wlIsAdded(item.id);
+    return `<div class="sr-card">
+      <div onclick="openPlayer(${item.id},'${type}','${safe}','${item.poster_path||''}',${item.vote_average||0})">
+        <img class="sr-card-poster" src="${poster}" alt="${title}" loading="lazy"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
+        <div class="sr-card-no-poster" style="display:none">🎬</div>
+      </div>
+      <button class="sr-card-bm${isSaved?' saved':''}" onclick="srToggleWl(${item.id},'${type}','${safe}','${item.poster_path||''}',${item.vote_average||0},'${year}')" title="${isSaved?'Хасах':'Хадгалах'}">${isSaved?'★':'🔖'}</button>
+      <div class="sr-card-info" onclick="openPlayer(${item.id},'${type}','${safe}','${item.poster_path||''}',${item.vote_average||0})">
+        <div class="sr-card-title">${title}</div>
+        <div class="sr-card-meta">${typeLabel}<span class="sr-card-dot"></span>${year}</div>
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+function srToggleWl(id, type, title, poster, rating, year) {
+  // Temporarily set currentMovie for toggleWatchlist
+  const prev = currentMovie;
+  currentMovie = {id, type, title, poster: poster||null, rating: rating||null, year};
+  toggleWatchlist();
+  currentMovie = prev;
+  // Re-render search results to update bookmark state
+  const q = document.getElementById('bigSearchInput').value;
+  if(q) {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(async () => {
+      try {
+        const r = await tmdb('/search/multi', {query: q, page:1});
+        const items = (r.results||[]).filter(x=>x.media_type!=='person'&&x.poster_path).slice(0,18);
+        renderInlineSearch(items, q);
+      } catch(e){}
+    }, 100);
+  }
+}
+
+// Close search on Escape
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape') {
+    closeWatchlist();
+    clearSearch();
+  }
+});
+
+function toggleSearch() {}  // no-op
+
+function openSearchPage(){}  // legacy no-op
+function closeSearchPage(){ clearSearch(); } // legacy compat
+
+// ─── GENRE FILTER ──────────────────────────────────────────
+async function filterGenre(genreId, genreName) {
+  const sec = document.getElementById('genre-section');
+  const title = document.getElementById('genre-title');
+  const grid = document.getElementById('genre-grid');
+  if(!sec || !title || !grid) return;
+  sec.style.display = 'block';
+  title.textContent = genreName;
+  grid.innerHTML = makeSkeleton(12);
+  sec.scrollIntoView({behavior:'smooth'});
+  try {
+    const r = await tmdb('/discover/movie', {with_genres: genreId, sort_by:'popularity.desc', page:1});
+    grid.innerHTML = (r.results||[]).map(m=>renderCard(m,'movie')).join('');
+    if(!r.results?.length) grid.innerHTML = '<p style="color:#555;padding:20px;">Контент олдсонгүй.</p>';
+  } catch(e) {
+    grid.innerHTML = '<p style="color:#555;padding:20px;">Ачааллахад алдаа гарлаа.</p>';
+  }
+  const genres = [{id:28,name:'Action'},{id:18,name:'Drama'},{id:35,name:'Comedy'},{id:27,name:'Horror'},{id:10749,name:'Romance'},{id:878,name:'Sci-Fi'},{id:12,name:'Adventure'},{id:99,name:'Documentary'},{id:16,name:'Animation'},{id:53,name:'Thriller'},{id:14,name:'Fantasy'},{id:36,name:'History'}];
+  const tabsEl = document.getElementById('genre-tabs');
+  if(tabsEl) tabsEl.innerHTML = genres.map(g=>
+    `<div class="gtab ${g.id===genreId?'active':''}" onclick="filterGenre(${g.id},'${g.name}')">${g.name}</div>`
+  ).join('');
+}
+
+// ─── LOAD SECTION ──────────────────────────────────────────
+async function loadSection(type) {
+  // Just scroll to relevant row for now
+  const map = {trending:'sec-trending', movies:'sec-trending', tv:'sec-trending'};
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+// ─── CLOSE MODAL ON OVERLAY CLICK ─────────────────────────
+document.getElementById('playerModal').addEventListener('click', e=>{
+  if(e.target === document.getElementById('playerModal')) closePlayer();
+});
+
+let notifTimer = null;
+function showNotif(title, msg) {
+  const nTitle = document.getElementById('notifTitle');
+  const nMsg   = document.getElementById('notifMsg');
+  const n      = document.getElementById('notif');
+  if(!n) return;
+  if(nTitle) nTitle.textContent = title;
+  if(nMsg)   nMsg.textContent   = msg ? ' ' + msg : '';
+  clearTimeout(notifTimer);
+  n.classList.add('show');
+  notifTimer = setTimeout(()=>n.classList.remove('show'), 3200);
+}
+
+// ─── KEYBOARD ──────────────────────────────────────────────
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape') {
+    // Don't hijack ESC when user is typing
+    const tag = document.activeElement?.tagName;
+    if(tag === 'INPUT' || tag === 'TEXTAREA') return;
+    closePlayer(); closePlayerPage(); closePricing(); closeLogin(); closeSettings(); closeAbout();
+  }
+});
+document.addEventListener('click', e => {
+  if(!e.target.closest('#nav-account-btn') && !e.target.closest('.nav-menu-btn')) closeAccountMenu();
+  if(!e.target.closest('#searchResults') && !e.target.closest('.big-search') && !e.target.closest('#watchlistPage')) {
+    if(document.getElementById('bigSearchInput').value) clearSearch();
+  }
+});
+
+// ─── STATE ─────────────────────────────────────────────────
+let isLoggedIn = false, isSubscribed = false, userEmail = '';
+let selectedPlanEl = null, selectedPlanName = '', selectedPlanAmount = 0;
+let currentTxCode = '';
+
+// ─── HELPERS ───────────────────────────────────────────────
+function randCode() { return Math.random().toString(36).substring(2,10).toUpperCase(); }
+function copyText(txt, btn) {
+  navigator.clipboard.writeText(txt).catch(()=>{});
+  const orig = btn.textContent;
+  btn.textContent = 'Хуулагдлаа!'; btn.style.color = '#7c3aed';
+  setTimeout(()=>{ btn.textContent = orig; btn.style.color = ''; }, 1500);
+}
+
+// ─── ACCOUNT MENU ──────────────────────────────────────────
+function toggleAccountMenu() {
+  const dd = document.getElementById('account-dropdown');
+  const ch = document.getElementById('acc-chevron');
+  const open = dd && dd.style.display === 'block';
+  if(dd) dd.style.display = open ? 'none' : 'block';
+  if(ch) ch.style.transform = open ? '' : 'rotate(180deg)';
+}
+function closeAccountMenu() { const dd = document.getElementById('account-dropdown'); if(dd) dd.style.display='none'; }
+function doLogout() {
+  isLoggedIn=false; isSubscribed=false; userEmail='';
+  currentMovie=null; currentServerIndex=0;
+  document.getElementById('nav-login-btn').style.display='flex';
+  document.getElementById('nav-account-btn').style.display='none';
+  // Close any open modals
+  document.getElementById('playerModal').classList.remove('open');
+  document.getElementById('playerPage').style.display='none';
+  document.getElementById('fullPlayerIframe').src='';
+  document.body.style.overflow='';
+  closeAccountMenu();
+  showNotif('StreamMN','Амжилттай гарлаа!');
+}
+function setLoggedIn(email) {
+  isLoggedIn=true; userEmail=email;
+  document.getElementById('nav-login-btn').style.display='none';
+  document.getElementById('nav-account-btn').style.display='block';
+  const av=document.getElementById('nav-avatar'); if(av) av.textContent=email[0].toUpperCase();
+  const dd=document.getElementById('dd-email'); if(dd) dd.textContent=email;
+}
+
+// ─── PRICING ───────────────────────────────────────────────
+function openPricing() {
+  closeAccountMenu();
+  document.getElementById('pricingModal').style.display='flex';
+  document.body.style.overflow='hidden';
+  backToPlans();
+}
+function closePricing() {
+  document.getElementById('pricingModal').style.display='none';
+  const loginOpen  = document.getElementById('loginModal').style.display !== 'none';
+  const playerOpen = document.getElementById('playerModal').classList.contains('open');
+  if(!loginOpen && !playerOpen) document.body.style.overflow='';
+}
+function selectPlan(el, name, price, amount) {
+  document.querySelectorAll('#plan-grid > div').forEach(d=>{ d.classList.remove('selected'); d.style.borderColor='#2a3550'; });
+  el.classList.add('selected'); el.style.borderColor='#7c3aed';
+  selectedPlanEl=el; selectedPlanName=name; selectedPlanAmount=amount;
+  const btn=document.getElementById('subscribe-btn');
+  btn.textContent=`Үргэлжлүүлэх • ${price}`; btn.style.opacity='1'; btn.style.pointerEvents='auto';
+}
+function checkInviteCode() {
+  const code=document.getElementById('invite-code').value.trim();
+  if(!code){showNotif('StreamMN','Урилгын код оруулна уу!');return;}
+  showNotif('StreamMN','Урилгын код буруу эсвэл хугацаа дууссан байна.');
+}
+function goToPayment() {
+  if(!selectedPlanEl){showNotif('StreamMN','Хугацаагаа сонгоно уу!');return;}
+  currentTxCode=randCode();
+  document.getElementById('tx-code').textContent=currentTxCode;
+  document.getElementById('pay-amount-display').textContent=selectedPlanAmount.toLocaleString()+'₮';
+  document.getElementById('pay-amount-raw').value=selectedPlanAmount;
+  document.getElementById('pay-status-msg').style.display='none';
+  const cb=document.getElementById('check-btn');
+  cb.disabled=false; cb.style.opacity='1'; cb.textContent=`Гүйлгээ шалгах • ${selectedPlanAmount.toLocaleString()}₮`;
+  document.getElementById('step-plans').style.display='none';
+  document.getElementById('step-payment').style.display='block';
+}
+function backToPlans() {
+  document.getElementById('step-plans').style.display='block';
+  document.getElementById('step-payment').style.display='none';
+}
+function doCheckPayment() {
+  const btn=document.getElementById('check-btn');
+  btn.textContent='Шалгаж байна...'; btn.disabled=true; btn.style.opacity='0.7';
+  setTimeout(()=>{
+    document.getElementById('pay-status-msg').style.display='block';
+    btn.textContent=`Дахин шалгах • ${selectedPlanAmount.toLocaleString()}₮`;
+    btn.disabled=false; btn.style.opacity='1';
+  }, 2000);
+}
+
+// ─── WATCH CLICK ───────────────────────────────────────────
+function handleWatchClick() {
+  if(!isLoggedIn) {
+    // currentMovie is already set from openPlayer() — just open login
+    openLogin();
+    return;
+  }
+  openFullPlayer();
+}
+
+// ─── FULL PLAYER PAGE ──────────────────────────────────────
+let playerHideTimer = null;
+let popupBlockTimer = null;
+
+function openFullPlayer() {
+  const {id,type,title}=currentMovie||{};
+  if(!id) { console.warn('No current movie'); return; }
+
+  const si = currentServerIndex || 0;
+  const servers=type==='tv'?TV_SERVERS:SERVERS;
+
+  // Close modal first
+  document.getElementById('playerModal').classList.remove('open');
+
+  // Build server buttons inside CC panel
+  document.getElementById('ccServerBtns').innerHTML=servers.map((s,i)=>
+    `<button onclick="switchFullServer(${i})" style="background:${i===si?'rgba(124,58,237,0.2)':'rgba(255,255,255,0.05)'};border:1px solid ${i===si?'rgba(124,58,237,0.4)':'rgba(255,255,255,0.1)'};color:#fff;padding:7px 12px;border-radius:6px;cursor:pointer;font-size:0.78rem;font-family:'DM Sans',sans-serif;text-align:left;width:100%;">${s.name}</button>`
+  ).join('');
+
+  // Load iframe
+  document.getElementById('fullPlayerIframe').src=type==='tv'?servers[si].url(id,1,1):servers[si].url(id);
+  window.addEventListener('blur', preventPopup);
+  // Reset fallback state
+  fallbackAttempt = 0;
+  clearTimeout(iframeCheckTimer);
+  document.getElementById('serverFallbackOverlay').style.display = 'none';
+
+  // Set title
+  const titleEl=document.getElementById('playerPageTitle');
+  if(titleEl) titleEl.textContent=title||'';
+
+  // Show player page
+  document.getElementById('playerPage').style.display='flex';
+  document.body.style.overflow='hidden';
+  document.getElementById('subtitlePopup').style.display='none';
+  document.getElementById('ccPanel').style.display='none';
+  document.getElementById('sub-progress-wrap').style.display='none';
+  document.getElementById('sub-bar').style.width='0%';
+  document.getElementById('sub-pct').textContent='0%';
+  document.getElementById('sub-btns').style.display='flex';
+  const subBtn=document.querySelector('#sub-btns button');
+  if(subBtn){subBtn.textContent='Монгол хадмал үүсгэх';subBtn.disabled=false;subBtn.style.opacity='1';}
+
+  // Auto-hide top bar
+  setupPlayerMouseEvents();
+
+  // Auto fullscreen
+  setTimeout(()=>tryFullscreen(), 600);
+
+  // Subtitle popup after 4s
+  setTimeout(()=>{
+    if(document.getElementById('playerPage').style.display!=='none'){
+      document.getElementById('subtitlePopup').style.display='block';
+      setTimeout(()=>{
+        const btn=document.querySelector('#sub-btns button');
+        if(btn&&!btn.disabled&&document.getElementById('subtitlePopup').style.display!=='none') startSubtitleCreation(btn);
+      },2500);
+    }
+  },4000);
+}
+
+function setupPlayerMouseEvents() {
+  const page=document.getElementById('playerPage');
+  const bar=document.getElementById('playerTopBar');
+  clearTimeout(playerHideTimer);
+  bar.style.opacity='1'; bar.style.pointerEvents='auto';
+  const show=()=>{
+    bar.style.opacity='1'; bar.style.pointerEvents='auto';
+    clearTimeout(playerHideTimer);
+    playerHideTimer=setTimeout(()=>{
+      if(document.getElementById('ccPanel').style.display==='none') {
+        bar.style.opacity='0'; bar.style.pointerEvents='none';
+      }
+    },3000);
+  };
+  page.onmousemove=show; page.ontouchstart=show; show();
+}
+
+function toggleCCPanel() {
+  const p=document.getElementById('ccPanel');
+  const bar=document.getElementById('playerTopBar');
+  const open=p.style.display!=='none';
+  p.style.display=open?'none':'block';
+  if(!open){ clearTimeout(playerHideTimer); bar.style.opacity='1'; bar.style.pointerEvents='auto'; }
+}
+
+function selectCC(lang,el) {
+  // Remove all active states cleanly
+  document.querySelectorAll('#cc-options > div').forEach(d=>{
+    d.style.background='transparent';
+    d.style.border='1px solid transparent';
+    // Remove any appended check spans
+    const appended = d.querySelector('span.cc-check');
+    if(appended) appended.remove();
+  });
+  el.style.background='rgba(124,58,237,0.2)';
+  el.style.border='1px solid rgba(124,58,237,0.4)';
+  const check=document.createElement('span');
+  check.className='cc-check';
+  check.textContent='✓'; check.style.cssText='margin-left:auto;color:#a78bfa;font-size:0.75rem;font-weight:700;';
+  el.appendChild(check);
+  const langMap={'mn':'Монгол 🇲🇳','en':'English 🇺🇸','off':'Хадмалгүй'};
+  showNotif('Хадмал', langMap[lang]+' сонгогдлоо');
+  setTimeout(()=>{ document.getElementById('ccPanel').style.display='none'; },300);
+}
+
+function preventPopup() {
+  // Only refocus if player page is open and something tried to steal focus
+  if(document.getElementById('playerPage').style.display !== 'none') {
+    clearTimeout(popupBlockTimer);
+    popupBlockTimer = setTimeout(()=>window.focus(), 50);
+  }
+}
+
+function tryFullscreen() {
+  const el=document.getElementById('playerPage');
+  try{
+    if(el.requestFullscreen) el.requestFullscreen();
+    else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    else if(el.mozRequestFullScreen) el.mozRequestFullScreen();
+  }catch(e){}
+}
+
+function startSubtitleCreation(btn) {
+  btn.textContent='Орчуулж байна...'; btn.disabled=true; btn.style.opacity='0.6';
+  document.getElementById('sub-progress-wrap').style.display='block';
+  let pct=0;
+  const iv=setInterval(()=>{
+    pct+=Math.floor(Math.random()*8)+3;
+    if(pct>=100){pct=100;clearInterval(iv);closeSubtitlePopup();showNotif('StreamMN','Монгол хадмал амжилттай нэмэгдлээ! 🎉');}
+    document.getElementById('sub-bar').style.width=pct+'%';
+    document.getElementById('sub-pct').textContent=pct+'%';
+  },350);
+}
+
+// ─── WATCHLIST SYSTEM ───────────────────────────────────
+function wlGet(){ try{ return JSON.parse(localStorage.getItem('smn_watchlist')||'[]'); }catch(e){ return []; } }
+function wlSave(list){ localStorage.setItem('smn_watchlist', JSON.stringify(list)); }
+
+function wlIsAdded(id){
+  return wlGet().some(m => m.id == id);
+}
+
+function toggleWatchlist(){
+  if(!currentMovie) return;
+  const list = wlGet();
+  const idx = list.findIndex(m => m.id == currentMovie.id);
+  if(idx === -1){
+    list.unshift({ id: currentMovie.id, type: currentMovie.type||'movie', title: currentMovie.title, poster: currentMovie.poster, rating: currentMovie.rating, year: currentMovie.year||'' });
+    wlSave(list);
+    wlShowToast('★ Watchlist-д нэмэгдлээ!');
+    updateBookmarkBtn(true);
+  } else {
+    list.splice(idx, 1);
+    wlSave(list);
+    wlShowToast('Watchlist-аас хасагдлаа');
+    updateBookmarkBtn(false);
+  }
+  updateWlNavBtn();
+}
+
+function updateBookmarkBtn(saved){
+  const btn = document.getElementById('modalBookmarkBtn');
+  if(!btn) return;
+  btn.textContent = saved ? '★' : '🔖';
+  btn.title = saved ? 'Watchlist-аас хасах' : 'Watchlist-д нэмэх';
+  btn.classList.toggle('saved', saved);
+}
+
+function updateWlNavBtn(){
+  const list = wlGet();
+  const btn = document.getElementById('wlNavBtn');
+  if(!btn) return;
+  btn.classList.toggle('wl-active', list.length > 0);
+  btn.title = list.length > 0 ? `Watchlist (${list.length})` : 'Watchlist';
+}
+
+function openWatchlist(){
+  renderWatchlistGrid();
+  document.getElementById('watchlistPage').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeWatchlist(){
+  document.getElementById('watchlistPage').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function renderWatchlistGrid(){
+  const list = wlGet();
+  const countEl = document.getElementById('wlCount');
+  const grid = document.getElementById('watchlistGrid');
+  if(countEl) countEl.textContent = list.length;
+
+  if(!list.length){
+    grid.innerHTML = `<div class="wl-empty">
+      <div class="wl-empty-icon">★</div>
+      <div style="font-size:1rem;font-weight:700;color:#fff;margin-bottom:8px;">Watchlist хоосон байна</div>
+      <div style="font-size:0.82rem;color:#4a5568;">Кино дээр 🔖 дарж хадгална уу</div>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = `<div class="wl-grid">${list.map(m => {
+    const poster = m.poster ? `https://image.tmdb.org/t/p/w342${m.poster}` : '';
+    const safe = (m.title||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `<div class="wl-card" onclick="closeWatchlist();openPlayer(${m.id},'${m.type||'movie'}','${safe}',${m.poster?`'${m.poster}'`:'null'});">
+      ${poster ? `<img src="${poster}" alt="${m.title}" loading="lazy"/>` : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#333;font-size:2rem;">🎬</div>`}
+      <div class="wl-card-info">
+        <div class="wl-card-title">${m.title||'?'}</div>
+        <div class="wl-card-meta">${m.year||''} · ${m.type==='tv'?'Цуврал':'Кино'}${m.rating?` · ⭐${m.rating}`:''}</div>
+      </div>
+      <button class="wl-remove-btn" onclick="event.stopPropagation();wlRemove(${m.id})" title="Хасах">✕</button>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+function wlRemove(id){
+  const list = wlGet().filter(m => m.id != id);
+  wlSave(list);
+  renderWatchlistGrid();
+  updateWlNavBtn();
+  wlShowToast('Watchlist-аас хасагдлаа');
+}
+
+function wlShowToast(msg){
+  const t = document.getElementById('wlToast');
+  if(!t) return;
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.style.opacity = '0'; }, 2500);
+}
+
+// Close watchlist on Escape
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape'){
+    closeWatchlist();
+    closeSearchPage();
+  }
+});
+
+// Init watchlist nav button
+updateWlNavBtn();
+let iframeCheckTimer = null;
+let fallbackAttempt = 0;
+const UNAVAILABLE_PHRASES = [
+  'unavailable at the moment',
+  'this media is unavailable',
+  'not available',
+  'video not found',
+  '404',
+  'error loading',
+];
+
+function onIframeLoad(iframe) {
+  // Clear previous check
+  clearTimeout(iframeCheckTimer);
+  // Reset fallback attempt counter on manual server switch
+  // Check after 4s if content loaded or failed
+  iframeCheckTimer = setTimeout(() => {
+    checkIframeContent(iframe);
+  }, 4000);
+}
+
+function checkIframeContent(iframe) {
+  try {
+    const doc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (!doc) return; // cross-origin — can't read, assume OK
+    const bodyText = (doc.body?.innerText || '').toLowerCase();
+    const isFailed = UNAVAILABLE_PHRASES.some(p => bodyText.includes(p));
+    if (isFailed) autoFallbackNextServer();
+  } catch(e) {
+    // Cross-origin iframe — can't read content, assume it's playing
+  }
+}
+
+function autoFallbackNextServer() {
+  const {id, type} = currentMovie || {};
+  if (!id) return;
+  const servers = type === 'tv' ? TV_SERVERS : SERVERS;
+  const next = currentServerIndex + 1;
+
+  if (next >= servers.length) {
+    // All servers failed
+    showFallbackOverlay('❌ Бүх server ажиллахгүй байна', 'Дараа дахин оролдоно уу эсвэл server сонгоно уу.', false);
+    return;
+  }
+
+  // Auto-switch to next server silently
+  showToastFallback(`⚡ Server ${currentServerIndex+1} ажиллахгүй — Server ${next+1}-рүү шилжиж байна...`);
+  switchFullServer(next);
+  fallbackAttempt++;
+}
+
+function showToastFallback(msg) {
+  // Show a small non-intrusive toast inside the player
+  let toast = document.getElementById('playerToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'playerToast';
+    toast.style.cssText = 'position:absolute;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(10,12,24,0.95);border:1px solid rgba(255,255,255,0.12);color:#fff;padding:10px 18px;border-radius:8px;font-size:0.8rem;font-family:"DM Sans",sans-serif;z-index:30;transition:opacity 0.3s;white-space:nowrap;pointer-events:none;';
+    document.getElementById('playerPage').appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.style.opacity = '1';
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => { toast.style.opacity = '0'; }, 3500);
+}
+
+function showFallbackOverlay(title, sub, showBtns=true) {
+  const overlay = document.getElementById('serverFallbackOverlay');
+  document.getElementById('fallbackMsg').textContent = title;
+  document.getElementById('fallbackSub').textContent = sub;
+  // Build manual server buttons
+  if (showBtns) {
+    const {id, type} = currentMovie || {};
+    const servers = type === 'tv' ? TV_SERVERS : SERVERS;
+    document.getElementById('fallbackServerBtns').innerHTML = servers.map((s, i) =>
+      `<button onclick="switchFullServer(${i});closeFallbackOverlay();" style="background:${i===currentServerIndex?'rgba(124,58,237,0.3)':'rgba(255,255,255,0.08)'};border:1px solid ${i===currentServerIndex?'rgba(124,58,237,0.5)':'rgba(255,255,255,0.12)'};color:#fff;padding:8px 14px;border-radius:6px;cursor:pointer;font-size:0.78rem;font-family:'DM Sans',sans-serif;">${s.name}</button>`
+    ).join('');
+  } else {
+    document.getElementById('fallbackServerBtns').innerHTML = '';
+  }
+  overlay.style.display = 'flex';
+}
+
+function closeFallbackOverlay() {
+  document.getElementById('serverFallbackOverlay').style.display = 'none';
+}
+
+function switchFullServer(i) {
+  const {id, type} = currentMovie || {};
+  if (!id) return;
+  const servers = type === 'tv' ? TV_SERVERS : SERVERS;
+  if (i >= servers.length) return;
+
+  currentServerIndex = i;
+  clearTimeout(iframeCheckTimer);
+
+  // Update iframe src
+  document.getElementById('fullPlayerIframe').src = type === 'tv'
+    ? servers[i].url(id, 1, 1)
+    : servers[i].url(id);
+
+  // Update server button highlight in CC panel
+  document.querySelectorAll('#ccServerBtns button').forEach((b, j) => {
+    b.style.background  = j === i ? 'rgba(124,58,237,0.2)' : 'rgba(255,255,255,0.05)';
+    b.style.borderColor = j === i ? 'rgba(124,58,237,0.4)' : 'rgba(255,255,255,0.1)';
+  });
+
+  // Show which server is active
+  showToastFallback(`▶ ${servers[i].name}`);
+  setTimeout(() => { document.getElementById('ccPanel').style.display = 'none'; }, 300);
+}
+
+function closePlayerPage() {
+  clearTimeout(playerHideTimer);
+  clearTimeout(iframeCheckTimer);
+  document.getElementById('serverFallbackOverlay').style.display = 'none';
+  document.getElementById('playerPage').style.display='none';
+  document.getElementById('fullPlayerIframe').src='';
+  const page=document.getElementById('playerPage'); page.onmousemove=null;
+  document.body.style.overflow='';
+  window.removeEventListener('blur',preventPopup);
+  try{if(document.fullscreenElement)document.exitFullscreen();}catch(e){}
+}
+function closeTipPopup(){}
+function closeSubtitlePopup(){ document.getElementById('subtitlePopup').style.display='none'; }
+
+// ─── ABOUT / FAQ PAGE ──────────────────────────────────────
+function openAbout() {
+  closeAccountMenu();
+  document.getElementById('aboutPage').style.display='block';
+  document.body.style.overflow='hidden';
+}
+function closeAbout() {
+  document.getElementById('aboutPage').style.display='none';
+  document.body.style.overflow='';
+}
+function filterFAQ(q) {
+  const items=document.querySelectorAll('#faq-content .faq-item');
+  const sections=document.querySelectorAll('#faq-content .faq-section');
+  const lq=q.toLowerCase().trim();
+  if(!lq){items.forEach(i=>i.style.display='');sections.forEach(s=>s.style.display='');return;}
+  sections.forEach(sec=>{
+    let any=false;
+    sec.querySelectorAll('.faq-item').forEach(item=>{
+      const match=item.textContent.toLowerCase().includes(lq);
+      item.style.display=match?'':'none';
+      if(match) any=true;
+    });
+    sec.style.display=any?'':'none';
+  });
+}
+
+// ─── SETTINGS PAGE ─────────────────────────────────────────
+function openSettings(section) {
+  closeAccountMenu();
+  document.getElementById('settingsPage').style.display='block';
+  document.body.style.overflow='hidden';
+  settingsNav(section||'all', document.getElementById('snav-'+(section||'all')));
+
+  // Populate account section
+  const statusEl = document.getElementById('s-sub-status');
+  const emailEl  = document.getElementById('s-sub-email');
+  if(emailEl) emailEl.textContent = userEmail || '—';
+
+  if(isSubscribed && selectedPlanAmount > 0) {
+    if(statusEl){ statusEl.textContent='active'; statusEl.style.color='#4ade80'; }
+    const daysMap = {12900:30, 23300:60, 31000:90, 50400:180, 77400:365};
+    const days = daysMap[selectedPlanAmount] || 30;
+    const now = new Date();
+    const endDate = new Date(now); endDate.setDate(endDate.getDate() + days);
+    const set = (id,v)=>{ const e=document.getElementById(id); if(e) e.textContent=v; };
+    set('s-sub-start',     now.toLocaleString());
+    set('s-sub-end',       endDate.toLocaleString());
+    set('s-sub-remaining', days + ' days');
+    set('s-hist-amount',   selectedPlanAmount.toLocaleString()+'₮');
+    set('s-hist-dates',    now.toLocaleString()+' → '+endDate.toLocaleString());
+  } else {
+    if(statusEl){ statusEl.textContent='Идэвхгүй'; statusEl.style.color='#8892a4'; }
+    const set = (id,v)=>{ const e=document.getElementById(id); if(e) e.textContent=v; };
+    set('s-sub-start','—'); set('s-sub-end','—'); set('s-sub-remaining','—');
+    set('s-hist-amount','—'); set('s-hist-dates','—');
+  }
+}
+function closeSettings() {
+  document.getElementById('settingsPage').style.display='none';
+  document.body.style.overflow='';
+}
+function settingsNav(section, el) {
+  ['all','account','preferences','appearance','subtitles','devices','referral'].forEach(s=>{
+    const n=document.getElementById('snav-'+s);
+    if(n){ n.style.background='transparent'; n.style.color='#8892a4'; }
+  });
+  if(el){ el.style.background='rgba(124,58,237,0.15)'; el.style.color='#a78bfa'; }
+  const sections=['account','preferences','appearance','subtitles','devices','referral'];
+  sections.forEach(s=>{
+    const sec=document.getElementById('sec-'+s);
+    if(sec) sec.style.display=(section==='all'||section===s)?'block':'none';
+  });
+  // Scroll the main content area to top
+  const mainContent = document.querySelector('#settingsPage > div:last-of-type > div:last-of-type');
+  if(mainContent) mainContent.scrollTop = 0;
+}
+function toggleSwitch(inp) {
+  const sw = inp.nextElementSibling;
+  sw.style.background = inp.checked ? '#7c3aed' : '#2a3550';
+  // Thumb position handled by CSS ::after pseudo-element (input:checked + .sw::after)
+}
+function selectTheme(el, color) {
+  document.querySelectorAll('#sec-appearance [onclick^="selectTheme"]').forEach(d=>d.style.borderColor='#2a3550');
+  el.style.borderColor='#7c3aed';
+  showNotif('StreamMN','Загвар өөрчлөгдлөө!');
+}
+
+// ─── LOGIN MODAL ───────────────────────────────────────────
+function openLogin() {
+  // Keep currentMovie intact so we can play after login
+  document.getElementById('loginModal').style.display='flex';
+  switchAuthTab('login');
+}
+
+function onLoginSuccess() {
+  document.getElementById('loginModal').style.display='none';
+  if(currentMovie && currentMovie.id) {
+    // Go straight to player — movie was waiting
+    openFullPlayer();
+  } else {
+    document.body.style.overflow='';
+  }
+}
+
+function closeLogin() {
+  document.getElementById('loginModal').style.display='none';
+  if(currentMovie && currentMovie.id) {
+    // Reopen detail modal with play button active
+    document.getElementById('playerModal').classList.add('open');
+    document.body.style.overflow='hidden';
+    const wb=document.getElementById('watchBtn');
+    if(wb){
+      wb.innerHTML='<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg> Үзэх';
+      wb.onclick=handleWatchClick;
+    }
+    const pt=document.getElementById('playerPlaceholderText');
+    if(pt) pt.textContent='Үзэхийн тулд дарна уу';
+  } else {
+    document.body.style.overflow='';
+  }
+}
+function switchAuthTab(tab) {
+  document.getElementById('auth-login').style.display    = tab==='login'    ? 'block' : 'none';
+  document.getElementById('auth-register').style.display = tab==='register' ? 'block' : 'none';
+  document.getElementById('auth-success').style.display  = tab==='success'  ? 'block' : 'none';
+  const lt=document.getElementById('login-tab'), rt=document.getElementById('register-tab');
+  if(lt&&rt){
+    lt.style.borderBottomColor=tab==='login'?'#3d4fd1':'transparent'; lt.style.color=tab==='login'?'#fff':'#8892a4';
+    rt.style.borderBottomColor=tab==='register'?'#3d4fd1':'transparent'; rt.style.color=tab==='register'?'#fff':'#8892a4';
+  }
+}
+function toggleLoginPw() { const i=document.getElementById('login-pw'); i.type=i.type==='password'?'text':'password'; }
+function toggleRegPw()   { const i=document.getElementById('reg-pw');   i.type=i.type==='password'?'text':'password'; }
+function checkPwStrength(val) {
+  let s=0;
+  if(val.length>=6)  s++;
+  if(val.length>=10) s++;
+  if(/[A-Z]/.test(val)&&/[0-9]/.test(val)) s++;
+  if(/[^A-Za-z0-9]/.test(val)) s++;
+  const clr=['#e50914','#f5a623','#3d4fd1','#1D9E75'];
+  const lbl=['Хэтэрхий богино','Сул','Дунд зэрэг','Хүчтэй'];
+  ['pwb1','pwb2','pwb3','pwb4'].forEach((id,i)=>{
+    const b=document.getElementById(id);
+    if(b) b.style.background = i<s ? clr[s-1] : '#1e2740';
+  });
+  const el=document.getElementById('pw-strength-label');
+  if(el){
+    el.textContent = val.length ? lbl[Math.min(s,3)] : '';
+    el.style.color  = s>0 ? clr[Math.min(s-1,3)] : '#8892a4'; // guard s=0
+  }
+}
+function doLogin() {
+  const email=document.getElementById('login-email').value.trim(), pw=document.getElementById('login-pw').value;
+  if(!email||!pw){shakeModal();showNotif('Алдаа','Имэйл болон нууц үгээ оруулна уу!');return;}
+  setLoggedIn(email);
+  // If movie is waiting, go straight to player — skip success screen
+  if(currentMovie && currentMovie.id) {
+    document.getElementById('loginModal').style.display='none';
+    openFullPlayer();
+  } else {
+    document.getElementById('success-title').textContent='Тавтай морил!';
+    document.getElementById('success-msg').textContent=`${email} — амжилттай нэвтэрлээ. StreamMN-г эдлээрэй! 🎬`;
+    switchAuthTab('success');
+  }
+}
+function doRegister() {
+  const email=document.getElementById('reg-email').value.trim(), pw=document.getElementById('reg-pw').value, terms=document.getElementById('terms-check').checked;
+  if(!email||!pw){shakeModal();showNotif('Алдаа','Бүх талбарыг бөглөнө үү!');return;}
+  if(!terms){shakeModal();showNotif('Алдаа','Нөхцөл зөвшөөрөөгүй байна!');return;}
+  setLoggedIn(email);
+  if(currentMovie && currentMovie.id) {
+    document.getElementById('loginModal').style.display='none';
+    openFullPlayer();
+  } else {
+    document.getElementById('success-title').textContent='Бүртгэл амжилттай!';
+    document.getElementById('success-msg').textContent=`${email} — бүртгэл үүсгэгдлээ. StreamMN-д тавтай морил! 🎉`;
+    switchAuthTab('success');
+  }
+}
+function shakeModal() { const b=document.querySelector('#loginModal > div'); b.style.animation='shake 0.4s ease'; setTimeout(()=>b.style.animation='',400); }
+
+// ─── INIT ──────────────────────────────────────────────────
+loadAllRows();
+loadHero();
+</script>
+</body>
+</html>

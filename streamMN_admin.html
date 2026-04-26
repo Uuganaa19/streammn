@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>StreamMN Admin Panel</title>
+<!-- Load Supabase SYNCHRONOUSLY so it's available before any button clicks -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{--bg:#060810;--sur:#0d1117;--sur2:#121820;--sur3:#1a2235;--brd:#1e2740;--brd2:#2a3550;--acc:#7c3aed;--acc2:#3d4fd1;--acc3:#a78bfa;--grn:#10b981;--red:#ef4444;--yel:#f59e0b;--blu:#38bdf8;--org:#f97316;--txt:#f1f5f9;--mut:#64748b;--mut2:#8892a4;}
+body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;}
+::-webkit-scrollbar{width:5px;height:5px;} ::-webkit-scrollbar-track{background:transparent;} ::-webkit-scrollbar-thumb{background:var(--brd2);border-radius:3px;}
+
+/* SETUP */
+#setup{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px;}
+.setup-box{background:var(--sur);border:1px solid var(--brd);border-radius:16px;padding:36px;width:100%;max-width:540px;}
+.stab-row{display:flex;gap:0;margin-bottom:24px;border-bottom:1px solid var(--brd);}
+.stab{flex:1;text-align:center;padding:9px;font-size:0.72rem;font-weight:700;color:var(--mut2);border-bottom:2px solid transparent;}
+.stab.active{color:var(--acc3);border-bottom-color:var(--acc);}
+.stab.done{color:var(--grn);}
+
+/* LOGIN */
+#login{position:fixed;inset:0;background:var(--bg);display:none;align-items:center;justify-content:center;z-index:9999;}
+.login-box{background:var(--sur);border:1px solid var(--brd);border-radius:16px;padding:44px 40px;width:380px;overflow:hidden;position:relative;}
+.login-box::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;background:radial-gradient(circle,rgba(124,58,237,0.2),transparent 70%);pointer-events:none;}
+
+/* APP */
+#app{display:none;}
+.sidebar{position:fixed;top:0;left:0;width:216px;height:100vh;background:var(--sur);border-right:1px solid var(--brd);display:flex;flex-direction:column;z-index:100;}
+.logo-row{display:flex;align-items:center;gap:9px;padding:17px 18px;border-bottom:1px solid var(--brd);}
+.logo-icon{width:28px;height:28px;background:linear-gradient(135deg,var(--acc),var(--acc2));border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.75rem;flex-shrink:0;}
+.snav-label{font-size:0.62rem;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:2px;padding:13px 18px 5px;}
+.snav{display:flex;align-items:center;gap:9px;padding:8px 18px;cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--mut2);transition:all 0.15s;border-left:2px solid transparent;}
+.snav:hover{color:var(--txt);background:rgba(255,255,255,0.03);}
+.snav.active{color:var(--acc3);background:rgba(124,58,237,0.08);border-left-color:var(--acc);}
+.nbadge{margin-left:auto;background:var(--red);color:#fff;font-size:0.6rem;padding:1px 5px;border-radius:8px;font-family:'JetBrains Mono',monospace;}
+.sfooter{margin-top:auto;padding:13px 18px;border-top:1px solid var(--brd);display:flex;align-items:center;gap:9px;}
+.savatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--acc2));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.78rem;flex-shrink:0;}
+
+.main{margin-left:216px;min-height:100vh;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:13px 26px;background:var(--sur);border-bottom:1px solid var(--brd);position:sticky;top:0;z-index:50;gap:10px;}
+.topbar-t{font-size:0.95rem;font-weight:800;}
+.tright{display:flex;align-items:center;gap:9px;}
+.ldot{width:6px;height:6px;background:var(--grn);border-radius:50%;animation:blink 2s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.3;}}
+.dbst{font-size:0.68rem;padding:2px 7px;border-radius:3px;font-weight:700;}
+.dbok{background:rgba(16,185,129,0.1);color:var(--grn);border:1px solid rgba(16,185,129,0.2);}
+.dberr{background:rgba(239,68,68,0.1);color:var(--red);border:1px solid rgba(239,68,68,0.2);}
+.content{padding:22px 26px;}
+.page{display:none;}
+.page.active{display:block;}
+
+/* STATS */
+.sgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;}
+.sc{background:var(--sur);border:1px solid var(--brd);border-radius:9px;padding:16px;position:relative;overflow:hidden;}
+.sc::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.sc.grn::after{background:var(--grn);}.sc.pur::after{background:var(--acc);}.sc.yel::after{background:var(--yel);}.sc.blu::after{background:var(--blu);}.sc.red::after{background:var(--red);}
+.sc-label{font-size:0.65rem;font-weight:700;color:var(--mut2);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:7px;}
+.sc-val{font-size:1.7rem;font-weight:800;font-family:'JetBrains Mono',monospace;line-height:1;}
+.sc-sub{font-size:0.7rem;color:var(--mut2);margin-top:5px;}
+.sc-icon{position:absolute;top:13px;right:13px;font-size:1.3rem;opacity:0.2;}
+
+/* TABLE */
+.tc{background:var(--sur);border:1px solid var(--brd);border-radius:9px;overflow:hidden;margin-bottom:16px;}
+.thead{display:flex;align-items:center;justify-content:space-between;padding:13px 17px;border-bottom:1px solid var(--brd);gap:9px;flex-wrap:wrap;}
+.thead-t{font-size:0.85rem;font-weight:800;}
+.tacts{display:flex;gap:7px;align-items:center;flex-wrap:wrap;}
+.si{background:var(--sur2);border:1px solid var(--brd);border-radius:5px;padding:5px 10px;color:var(--txt);font-family:'Syne',sans-serif;font-size:0.76rem;outline:none;width:170px;}
+.si:focus{border-color:var(--acc);}
+.btn{padding:5px 12px;border-radius:5px;border:none;cursor:pointer;font-family:'Syne',sans-serif;font-size:0.75rem;font-weight:700;transition:all 0.15s;display:inline-flex;align-items:center;gap:4px;}
+.btp{background:var(--acc);color:#fff;}.btp:hover{background:#6d28d9;}
+.bts{background:var(--sur2);color:var(--mut2);border:1px solid var(--brd);}.bts:hover{color:var(--txt);}
+.btd{background:rgba(239,68,68,0.1);color:var(--red);border:1px solid rgba(239,68,68,0.15);}.btd:hover{background:rgba(239,68,68,0.2);}
+.btok{background:rgba(16,185,129,0.1);color:var(--grn);border:1px solid rgba(16,185,129,0.15);}.btok:hover{background:rgba(16,185,129,0.2);}
+.btw{background:rgba(245,158,11,0.1);color:var(--yel);border:1px solid rgba(245,158,11,0.15);}.btw:hover{background:rgba(245,158,11,0.2);}
+.btsm{padding:3px 8px;font-size:0.68rem;}
+table{width:100%;border-collapse:collapse;}
+thead th{padding:8px 13px;text-align:left;font-size:0.62rem;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:1.5px;background:var(--sur2);border-bottom:1px solid var(--brd);}
+tbody tr{border-bottom:1px solid var(--brd);transition:background 0.1s;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:rgba(255,255,255,0.015);}
+td{padding:9px 13px;font-size:0.79rem;vertical-align:middle;}
+.mono{font-family:'JetBrains Mono',monospace;font-size:0.73rem;}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:20px;font-size:0.63rem;font-weight:700;}
+.b-active{background:rgba(16,185,129,0.1);color:var(--grn);border:1px solid rgba(16,185,129,0.2);}
+.b-expired{background:rgba(239,68,68,0.1);color:var(--red);border:1px solid rgba(239,68,68,0.2);}
+.b-pending{background:rgba(245,158,11,0.1);color:var(--yel);border:1px solid rgba(245,158,11,0.2);}
+.b-paid{background:rgba(16,185,129,0.1);color:var(--grn);border:1px solid rgba(16,185,129,0.2);}
+.b-failed{background:rgba(239,68,68,0.1);color:var(--red);border:1px solid rgba(239,68,68,0.2);}
+.b-monthly{background:rgba(56,189,248,0.1);color:var(--blu);border:1px solid rgba(56,189,248,0.2);}
+.b-3month{background:rgba(124,58,237,0.1);color:var(--acc3);border:1px solid rgba(124,58,237,0.2);}
+.b-6month{background:rgba(249,115,22,0.1);color:var(--org);border:1px solid rgba(249,115,22,0.2);}
+.b-yearly{background:rgba(245,158,11,0.1);color:var(--yel);border:1px solid rgba(245,158,11,0.2);}
+
+/* MODAL */
+.mbg{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:500;display:none;align-items:center;justify-content:center;padding:20px;}
+.mbg.open{display:flex;}
+.mdl{background:var(--sur);border:1px solid var(--brd);border-radius:11px;width:100%;max-width:490px;padding:22px;position:relative;max-height:90vh;overflow-y:auto;}
+.mdl-lg{max-width:660px;}
+.mdl-t{font-size:0.95rem;font-weight:800;margin-bottom:16px;}
+.mdl-x{position:absolute;top:13px;right:13px;background:none;border:none;color:var(--mut2);cursor:pointer;font-size:1.1rem;}
+.fg{margin-bottom:12px;}
+.fl{display:block;font-size:0.65rem;font-weight:700;color:var(--mut2);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;}
+.fi,.fsel{width:100%;background:var(--sur2);border:1px solid var(--brd);border-radius:6px;padding:8px 10px;color:var(--txt);font-family:'Syne',sans-serif;font-size:0.83rem;outline:none;transition:border-color 0.2s;}
+.fi:focus,.fsel:focus{border-color:var(--acc);}
+.fsel option{background:var(--sur2);}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.mfooter{display:flex;justify-content:flex-end;gap:7px;margin-top:16px;padding-top:13px;border-top:1px solid var(--brd);}
+
+/* VERIFY MODAL SPECIAL */
+.vcard{background:var(--sur2);border:1px solid var(--brd2);border-radius:8px;padding:15px;margin-bottom:12px;}
+.vrow{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--brd);}
+.vrow:last-child{border-bottom:none;}
+.vkey{font-size:0.7rem;color:var(--mut2);font-weight:600;}
+.vval{font-weight:700;font-family:'JetBrains Mono',monospace;font-size:0.8rem;}
+.txbig{font-size:1.4rem;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--acc3);letter-spacing:4px;text-align:center;padding:13px;background:rgba(124,58,237,0.07);border-radius:7px;border:1px dashed rgba(124,58,237,0.3);margin:9px 0;}
+.bankcard{background:rgba(56,189,248,0.05);border:1px solid rgba(56,189,248,0.15);border-radius:7px;padding:13px;margin-bottom:12px;}
+.bankcard-t{font-size:0.65rem;color:var(--blu);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:7px;}
+.brow{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+.bkey{font-size:0.72rem;color:var(--mut2);}
+.bval{font-family:'JetBrains Mono',monospace;font-size:0.8rem;font-weight:700;}
+.cpbtn{background:none;border:1px solid var(--brd2);color:var(--mut2);padding:2px 7px;border-radius:3px;cursor:pointer;font-size:0.62rem;font-family:'Syne',sans-serif;}
+.cpbtn:hover{color:var(--txt);}
+
+/* FILTER TABS */
+.ftabs{display:flex;gap:2px;padding:3px;background:var(--sur2);border-radius:6px;}
+.ftab{padding:4px 9px;border-radius:4px;font-size:0.7rem;font-weight:700;cursor:pointer;color:var(--mut2);border:none;background:none;}
+.ftab.active{background:var(--sur);color:var(--txt);}
+
+/* ALERT */
+.alert{padding:11px 15px;border-radius:7px;font-size:0.8rem;margin-bottom:14px;display:flex;align-items:flex-start;gap:9px;}
+.aw{background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.2);color:var(--yel);}
+.ai{background:rgba(56,189,248,0.07);border:1px solid rgba(56,189,248,0.2);color:var(--blu);}
+.ag{background:rgba(16,185,129,0.07);border:1px solid rgba(16,185,129,0.2);color:var(--grn);}
+
+/* CHART */
+.chart{background:var(--sur);border:1px solid var(--brd);border-radius:9px;padding:17px;margin-bottom:16px;}
+.barchart{display:flex;align-items:flex-end;gap:5px;height:90px;}
+.barcol{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.bar{width:100%;border-radius:3px 3px 0 0;min-height:3px;}
+.bar:hover{opacity:0.75;}
+.barlbl{font-size:0.56rem;color:var(--mut2);font-family:'JetBrains Mono',monospace;}
+
+/* MINI BAR */
+.mb-wrap{display:flex;align-items:center;gap:7px;}
+.mb-bg{flex:1;height:5px;background:var(--sur3);border-radius:3px;}
+.mb-fill{height:100%;border-radius:3px;background:var(--acc);}
+
+/* EMPTY */
+.empty{padding:36px;text-align:center;color:var(--mut2);}
+
+/* DAYS */
+.dd{color:var(--red);font-weight:700;}
+.dw{color:var(--yel);font-weight:700;}
+.dok{color:var(--mut2);}
+
+/* UAVATAR */
+.ua{width:27px;height:27px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--acc2));display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:0.68rem;flex-shrink:0;}
+
+/* TOAST */
+.toast{position:fixed;bottom:18px;right:18px;padding:11px 15px;border-radius:7px;font-size:0.8rem;font-weight:600;z-index:9999;transform:translateY(60px);opacity:0;transition:all 0.25s;display:flex;align-items:center;gap:7px;max-width:320px;}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.success{background:var(--sur);border:1px solid rgba(16,185,129,0.4);color:var(--grn);}
+.toast.error{background:var(--sur);border:1px solid rgba(239,68,68,0.4);color:var(--red);}
+.toast.info{background:var(--sur);border:1px solid rgba(56,189,248,0.3);color:var(--blu);}
+</style>
+</head>
+<body>
+
+<!-- ═══ SETUP SCREEN ═══ -->
+<div id="setup">
+<div class="setup-box">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:24px;">
+    <div class="logo-icon">S</div><strong>StreamMN Admin</strong>
+    <span style="margin-left:auto;font-size:0.7rem;color:var(--mut2);">Анхны тохиргоо</span>
+  </div>
+  <div class="stab-row">
+    <div class="stab active" id="st1">1. Database</div>
+    <div class="stab" id="st2">2. M Bank</div>
+    <div class="stab" id="st3">3. Admin</div>
+  </div>
+
+  <!-- Step 1 -->
+  <div id="s1">
+    <div class="alert ai" style="margin-bottom:14px;"><span>ℹ️</span>
+      <div><strong>Supabase — үнэгүй, бодит database</strong><br/>
+      <a href="https://supabase.com" target="_blank" style="color:var(--blu);">supabase.com</a> дээр бүртгэл үүсгэж шинэ project нэмнэ үү. Project Settings → API хэсгээс URL болон anon key авна уу.<br/>
+      <em style="font-size:0.75rem;opacity:0.8;">Эсвэл "localStorage горим" сонгож нэн даруй ашиглаж болно.</em></div>
+    </div>
+    <div class="fg"><label class="fl">Supabase Project URL</label><input type="text" class="fi" id="sbUrl" placeholder="https://xxxx.supabase.co"/></div>
+    <div class="fg"><label class="fl">Supabase Anon Key</label>
+    <textarea class="fi" id="sbKey" rows="3" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9... эсвэл sb_publishable__..." style="resize:vertical;font-family:'JetBrains Mono',monospace;font-size:0.72rem;" oninput="validateKey(this.value)"></textarea>
+    <div id="keyHint" style="font-size:0.68rem;margin-top:4px;color:var(--mut2);">✅ eyJ... (legacy) болон sb_publishable__... (шинэ) аль алийг оруулж болно</div></div>
+
+    <!-- file:// warning — shown automatically if opened as local file -->
+    <div id="fileWarn" style="display:none;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:13px;margin-bottom:12px;font-size:0.8rem;color:var(--red);">
+      ⚠️ <strong>Файлыг шууд нээсэн байна (file://)</strong><br/>
+      Browser нь file:// горимд гадаад сүлжээний хүсэлт (Supabase API) хааж байна.<br/>
+      <strong style="color:#fff;">Шийдэл:</strong> PowerShell нээж Downloads хавтас дотор ажиллуулна уу:<br/>
+      <code style="background:rgba(0,0,0,0.4);padding:4px 8px;border-radius:4px;display:inline-block;margin-top:6px;color:#a78bfa;font-family:'JetBrains Mono',monospace;">npx serve .</code><br/>
+      Дараа нь <strong style="color:#fff;">http://localhost:3000/streamMN_admin.html</strong> хаягаар нээнэ үү.<br/>
+      <em style="opacity:0.7;font-size:0.75rem;">Эсвэл доор "localStorage горим" сонгоно уу — Supabase-гүй ажиллана.</em>
+    </div>
+    <button class="btn btp" style="width:100%;margin-bottom:8px;" onclick="step1()">Холболт шалгах →</button>
+    <button class="btn bts" style="width:100%;font-size:0.72rem;" onclick="localMode()">📁 localStorage горим — Supabase-гүй үргэлжлүүлэх</button>
+    <div id="s1err" style="color:var(--red);font-size:0.75rem;margin-top:7px;display:none;"></div>
+  </div>
+
+  <!-- Step 2 -->
+  <div id="s2" style="display:none;">
+    <div class="alert ai" style="margin-bottom:14px;"><span>🏦</span>
+      <div><strong>M Bank данс мэдээлэл</strong><br/>Хэрэглэгчид энэ данс руу мөнгөө шилжүүлнэ. Та M Bank app дээр гүйлгээг харж баталгаажуулна.</div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Дансны эзний нэр</label><input type="text" class="fi" id="bName" value="МӨНХЗУЛ БАТХУЯГ"/></div>
+      <div class="fg"><label class="fl">Банк</label><input type="text" class="fi" id="bBank" value="M Bank"/></div>
+    </div>
+    <div class="fg"><label class="fl">Дансны дугаар</label><input type="text" class="fi" id="bAcc" value="8000652700"/></div>
+    <div class="fg"><label class="fl">IBAN (заавал биш)</label><input type="text" class="fi" id="bIban" value="370039008000652700"/></div>
+    <button class="btn btp" style="width:100%;" onclick="step2()">Дараа →</button>
+  </div>
+
+  <!-- Step 3 -->
+  <div id="s3" style="display:none;">
+    <div class="fg"><label class="fl">Admin нэвтрэх нэр</label><input type="text" class="fi" id="aUser" value="admin"/></div>
+    <div class="fg"><label class="fl">Нууц үг (6+ тэмдэгт)</label><input type="password" class="fi" id="aPass" placeholder="Нууц үг оруулна уу"/></div>
+    <div class="fg"><label class="fl">Нууц үг давтах</label><input type="password" class="fi" id="aPass2" placeholder="Дахин оруулна уу"/></div>
+    <div id="s3err" style="color:var(--red);font-size:0.75rem;margin-top:4px;display:none;"></div>
+    <button class="btn btok" style="width:100%;margin-top:10px;" onclick="finishSetup()">✓ Тохиргоо дуусгах</button>
+  </div>
+</div>
+</div>
+
+<!-- ═══ LOGIN ═══ -->
+<div id="login">
+<div class="login-box">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:26px;"><div class="logo-icon">S</div><strong>StreamMN Admin</strong></div>
+  <div style="font-size:0.65rem;color:var(--mut2);letter-spacing:3px;text-transform:uppercase;margin-bottom:5px;">Admin Portal</div>
+  <div style="font-size:1.5rem;font-weight:800;margin-bottom:22px;">Нэвтрэх</div>
+  <div class="fg"><label class="fl">Нэвтрэх нэр</label><input type="text" id="lu" class="fi" placeholder="admin"/></div>
+  <div class="fg"><label class="fl">Нууц үг</label>
+    <div style="position:relative;">
+      <input type="password" id="lp" class="fi" style="padding-right:38px;" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"/>
+      <button onclick="var i=document.getElementById('lp');i.type=i.type==='password'?'text':'password'" type="button" style="position:absolute;right:9px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--mut2);cursor:pointer;">👁</button>
+    </div>
+  </div>
+  <button class="btn btp" style="width:100%;padding:10px;margin-top:4px;" onclick="doLogin()">Нэвтрэх →</button>
+  <div id="lerr" style="color:var(--red);font-size:0.75rem;margin-top:7px;display:none;">Нэвтрэх нэр эсвэл нууц үг буруу байна.</div>
+</div>
+</div>
+
+<!-- ═══ APP ═══ -->
+<div id="app">
+<div class="sidebar">
+  <div class="logo-row"><div class="logo-icon">S</div><span style="font-size:0.82rem;font-weight:800;letter-spacing:1px;">StreamMN</span></div>
+  <div class="snav-label">Үндсэн</div>
+  <div class="snav active" onclick="go('dashboard',this)"><span>📊</span><span>Dashboard</span></div>
+  <div class="snav" onclick="go('payments',this)"><span>💳</span><span>Төлбөр баталгаажуулах</span><span class="nbadge" id="pb" style="display:none;">0</span></div>
+  <div class="snav" onclick="go('customers',this)"><span>👥</span><span>Хэрэглэгчид</span></div>
+  <div class="snav" onclick="go('subs',this)"><span>🗓️</span><span>Гишүүнчлэл</span></div>
+  <div class="snav-label">Тохиргоо</div>
+  <div class="snav" onclick="go('expiring',this)"><span>⏰</span><span>Дуусах дөхсөн</span><span class="nbadge" id="eb" style="display:none;">0</span></div>
+  <div class="snav" onclick="go('reports',this)"><span>📈</span><span>Тайлан</span></div>
+  <div class="snav" onclick="go('settings',this)"><span>⚙️</span><span>Тохиргоо</span></div>
+  <div class="sfooter">
+    <div class="savatar" id="sav">A</div>
+    <div style="flex:1;min-width:0;"><div style="font-size:0.78rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="sname">Admin</div><div style="font-size:0.62rem;color:var(--mut2);" id="smode">—</div></div>
+    <button onclick="doLogout()" style="background:none;border:none;color:var(--mut);cursor:pointer;font-size:0.9rem;" title="Гарах">⏻</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-t" id="ptitle">Dashboard</div>
+    <div class="tright">
+      <div class="ldot"></div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--mut2);" id="clock"></div>
+      <span class="dbst" id="dbst">●</span>
+      <button class="btn btp btsm" onclick="openAdd()">+ Хэрэглэгч нэмэх</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+  <!-- DASHBOARD -->
+  <div class="page active" id="page-dashboard">
+    <div class="sgrid">
+      <div class="sc grn"><div class="sc-icon">👥</div><div class="sc-label">Нийт хэрэглэгч</div><div class="sc-val" id="d-total">—</div><div class="sc-sub">Бүртгэлтэй</div></div>
+      <div class="sc pur"><div class="sc-icon">✅</div><div class="sc-label">Идэвхтэй</div><div class="sc-val" id="d-active">—</div><div class="sc-sub">Одоогийн гишүүд</div></div>
+      <div class="sc yel"><div class="sc-icon">⏳</div><div class="sc-label">Хүлээгдэж буй</div><div class="sc-val" id="d-pend">—</div><div class="sc-sub">Баталгаажуулах шаардлагатай</div></div>
+      <div class="sc blu"><div class="sc-icon">💰</div><div class="sc-label">Энэ сарын орлого</div><div class="sc-val" id="d-rev">—</div><div class="sc-sub">Нийт төлбөр</div></div>
+    </div>
+    <div class="chart">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><span style="font-size:0.82rem;font-weight:800;">Сарын орлого (₮)</span><span style="font-size:0.7rem;color:var(--mut2);">Сүүлийн 6 сар</span></div>
+      <div class="barchart" id="rchart"></div>
+    </div>
+    <div class="tc">
+      <div class="thead"><div class="thead-t">🔔 Хүлээгдэж буй төлбөрүүд</div><button class="btn btw btsm" onclick="go('payments',document.querySelector('[onclick*=payments]'))">Бүгдийг харах →</button></div>
+      <table><thead><tr><th>Хэрэглэгч</th><th>TX Код</th><th>Дүн</th><th>Огноо</th><th>Үйлдэл</th></tr></thead><tbody id="d-plist"></tbody></table>
+    </div>
+  </div>
+
+  <!-- PAYMENTS -->
+  <div class="page" id="page-payments">
+    <div class="alert ai">
+      <span>🏦</span>
+      <div><strong>M Bank баталгаажуулалтын процесс:</strong><br/>
+      1️⃣ Хэрэглэгч таны M Bank данс руу мөнгө шилжүүлж <strong>TX кодыг гүйлгээний утга</strong>-д бичнэ<br/>
+      2️⃣ Та M Bank app нээж гүйлгээний жагсаалт харна<br/>
+      3️⃣ Зөв TX код олсон бол <strong style="color:var(--grn);">✅ Баталгаажуулах</strong> → Гишүүнчлэл автоматаар идэвхдэнэ</div>
+    </div>
+    <div class="tc">
+      <div class="thead">
+        <div class="thead-t">Төлбөрийн жагсаалт</div>
+        <div class="tacts">
+          <input type="text" class="si" placeholder="TX код, нэр хайх..." oninput="searchPay(this.value)"/>
+          <div class="ftabs" id="ptabs">
+            <button class="ftab active" onclick="fpay('all',this)">Бүгд</button>
+            <button class="ftab" onclick="fpay('pending',this)">⏳ Хүлээгдэж буй</button>
+            <button class="ftab" onclick="fpay('paid',this)">✅ Баталгаажсан</button>
+            <button class="ftab" onclick="fpay('failed',this)">❌ Цуцалсан</button>
+          </div>
+          <button class="btn bts btsm" onclick="loadPays()">↺</button>
+        </div>
+      </div>
+      <table><thead><tr><th>TX Код</th><th>Хэрэглэгч</th><th>Дүн</th><th>Гишүүнчлэл</th><th>Огноо</th><th>Статус</th><th>Үйлдэл</th></tr></thead><tbody id="p-list"></tbody></table>
+    </div>
+  </div>
+
+  <!-- CUSTOMERS -->
+  <div class="page" id="page-customers">
+    <div class="tc">
+      <div class="thead">
+        <div class="thead-t">Бүх хэрэглэгчид</div>
+        <div class="tacts">
+          <input type="text" class="si" placeholder="Нэр, имэйл хайх..." oninput="searchCust(this.value)"/>
+          <div class="ftabs" id="ctabs">
+            <button class="ftab active" onclick="fcust('all',this)">Бүгд</button>
+            <button class="ftab" onclick="fcust('active',this)">Идэвхтэй</button>
+            <button class="ftab" onclick="fcust('expired',this)">Дууссан</button>
+          </div>
+          <button class="btn btp btsm" onclick="openAdd()">+ Нэмэх</button>
+          <button class="btn bts btsm" onclick="loadCusts()">↺</button>
+        </div>
+      </div>
+      <table><thead><tr><th>Хэрэглэгч</th><th>Имэйл</th><th>Гишүүнчлэл</th><th>Эхлэх</th><th>Дуусах</th><th>Үлдсэн</th><th>Статус</th><th>Үйлдэл</th></tr></thead><tbody id="c-list"></tbody></table>
+    </div>
+  </div>
+
+  <!-- SUBSCRIPTIONS -->
+  <div class="page" id="page-subs">
+    <div class="sgrid">
+      <div class="sc blu"><div class="sc-label">1 сараар</div><div class="sc-val mono" id="sm">—</div></div>
+      <div class="sc pur"><div class="sc-label">3 сараар</div><div class="sc-val mono" id="s3">—</div></div>
+      <div class="sc yel"><div class="sc-label">6 сараар</div><div class="sc-val mono" id="s6">—</div></div>
+      <div class="sc grn"><div class="sc-label">12 сараар</div><div class="sc-val mono" id="sy">—</div></div>
+    </div>
+    <div class="tc">
+      <div class="thead"><div class="thead-t">Гишүүнчлэлийн жагсаалт</div></div>
+      <table><thead><tr><th>Хэрэглэгч</th><th>Төрөл</th><th>Үнэ</th><th>Эхлэх</th><th>Дуусах</th><th>Үлдсэн</th><th>Статус</th><th>Үйлдэл</th></tr></thead><tbody id="sub-list"></tbody></table>
+    </div>
+  </div>
+
+  <!-- EXPIRING -->
+  <div class="page" id="page-expiring">
+    <div class="alert aw">⚠️ Доорх гишүүдийн гишүүнчлэл <strong>7 хоногийн дотор</strong> дуусна.</div>
+    <div class="tc">
+      <div class="thead"><div class="thead-t">Дуусах дөхсөн</div><button class="btn bts btsm" onclick="showToast('Бүгдэд мэдэгдэл илгээгдлээ','info')">📧 Бүгдэд мэдэгдэх</button></div>
+      <table><thead><tr><th>Хэрэглэгч</th><th>Имэйл</th><th>Дуусах огноо</th><th>Үлдсэн</th><th>Төрөл</th><th>Үйлдэл</th></tr></thead><tbody id="exp-list"></tbody></table>
+    </div>
+  </div>
+
+  <!-- REPORTS -->
+  <div class="page" id="page-reports">
+    <div class="sgrid" style="grid-template-columns:repeat(3,1fr);">
+      <div class="sc pur"><div class="sc-label">Нийт орлого</div><div class="sc-val mono" id="r-tot">—</div></div>
+      <div class="sc grn"><div class="sc-label">Дундаж/хэрэглэгч</div><div class="sc-val mono" id="r-avg">—</div></div>
+      <div class="sc blu"><div class="sc-label">Нийт гүйлгээ</div><div class="sc-val mono" id="r-cnt">—</div></div>
+    </div>
+    <div class="chart"><div style="font-size:0.82rem;font-weight:800;margin-bottom:12px;">Гишүүнчлэлийн төрлөөр</div><div id="subChart" style="display:flex;flex-direction:column;gap:9px;"></div></div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="page" id="page-settings">
+    <div class="tc" style="padding:22px;">
+      <div style="font-size:0.88rem;font-weight:800;margin-bottom:16px;">🏦 M Bank данс тохиргоо</div>
+      <div class="bankcard" id="bankPreview">
+        <div class="bankcard-t">Одоогийн данс</div>
+        <div class="brow"><span class="bkey">Банк</span><span class="bval" id="cfg-bank">—</span></div>
+        <div class="brow"><span class="bkey">Эзний нэр</span><span class="bval" id="cfg-name">—</span></div>
+        <div class="brow"><span class="bkey">Дансны дугаар</span><span class="bval" id="cfg-acc">—</span></div>
+        <div class="brow"><span class="bkey">IBAN</span><span class="bval" id="cfg-iban">—</span></div>
+      </div>
+      <div class="frow" style="margin-bottom:10px;">
+        <div class="fg"><label class="fl">Банкны нэр</label><input type="text" class="fi" id="set-bank"/></div>
+        <div class="fg"><label class="fl">Дансны нэр</label><input type="text" class="fi" id="set-name"/></div>
+      </div>
+      <div class="frow" style="margin-bottom:14px;">
+        <div class="fg"><label class="fl">Дансны дугаар</label><input type="text" class="fi" id="set-acc"/></div>
+        <div class="fg"><label class="fl">IBAN</label><input type="text" class="fi" id="set-iban"/></div>
+      </div>
+      <button class="btn btp" onclick="saveSettings()">Хадгалах</button>
+
+      <div style="font-size:0.88rem;font-weight:800;margin:22px 0 14px;">🔐 Admin нууц үг солих</div>
+      <div class="frow" style="margin-bottom:12px;">
+        <div class="fg"><label class="fl">Шинэ нууц үг</label><input type="password" class="fi" id="np1"/></div>
+        <div class="fg"><label class="fl">Давтах</label><input type="password" class="fi" id="np2"/></div>
+      </div>
+      <button class="btn bts" onclick="changePass()">Нууц үг солих</button>
+
+      <!-- TELEGRAM BOT SETTINGS -->
+      <div style="font-size:0.88rem;font-weight:800;margin:22px 0 14px;">📱 Telegram Bot тохиргоо</div>
+      <div style="background:var(--sur2);border:1px solid var(--brd);border-radius:10px;padding:16px;margin-bottom:14px;">
+        <div class="frow" style="margin-bottom:10px;">
+          <div class="fg"><label class="fl">Bot Token</label><input type="text" class="fi" id="tg-token" placeholder="1234567890:AAHdqTcv..." style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;"/></div>
+          <div class="fg"><label class="fl">Таны Telegram User ID</label><input type="text" class="fi" id="tg-uid" placeholder="123456789" style="font-family:'JetBrains Mono',monospace;"/></div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+          <button class="btn btp" onclick="saveTgSettings()">💾 Хадгалах</button>
+          <button class="btn bts" onclick="testTgBot()">🧪 Тест мэдэгдэл илгээх</button>
+        </div>
+        <div id="tg-status" style="font-size:0.72rem;color:var(--mut2);margin-top:4px;"></div>
+        <div style="font-size:0.72rem;color:var(--mut2);margin-top:8px;line-height:1.6;">
+          ✅ Шинэ төлбөр орсон үед мэдэгдэл<br/>
+          ✅ Гишүүнчлэл баталгаажсан үед мэдэгдэл<br/>
+          ✅ Гишүүнчлэл 3 хоногийн дотор дуусах үед сануулга
+        </div>
+      </div>
+
+      <div style="font-size:0.88rem;font-weight:800;margin:22px 0 14px;">🗄️ Supabase SQL — Эхний удаа SQL Editor дээр ажиллуулна уу</div>
+      <pre style="background:var(--sur2);border:1px solid var(--brd);border-radius:7px;padding:14px;font-size:0.68rem;font-family:'JetBrains Mono',monospace;color:var(--mut2);overflow-x:auto;white-space:pre-wrap;">
+CREATE TABLE IF NOT EXISTS customers (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  phone TEXT,
+  sub_type TEXT DEFAULT 'monthly',
+  amount NUMERIC DEFAULT 12900,
+  start_date DATE,
+  end_date DATE,
+  status TEXT DEFAULT 'pending',
+  tx_code TEXT,
+  invite_code TEXT,
+  note TEXT,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS payments (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  customer_id TEXT,
+  customer_name TEXT,
+  email TEXT,
+  amount NUMERIC,
+  sub_type TEXT,
+  tx_code TEXT,
+  bank TEXT DEFAULT 'M Bank',
+  date DATE DEFAULT now(),
+  status TEXT DEFAULT 'pending',
+  bank_ref TEXT,
+  verified_note TEXT,
+  verified_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+-- Allow all access (admin only uses this)
+ALTER TABLE customers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE payments  ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "allow_all" ON customers FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "allow_all" ON payments  FOR ALL USING (true) WITH CHECK (true);</pre>
+      <div style="margin-top:14px;display:flex;gap:8px;">
+        <button class="btn bts" onclick="resetSetup()">🔄 Тохиргоог дахин хийх</button>
+        <button class="btn btd" onclick="clearAllData()">🗑 Бүх өгөгдөл устгах</button>
+      </div>
+    </div>
+  </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ADD/EDIT CUSTOMER MODAL -->
+<div class="mbg" id="custMdl">
+<div class="mdl">
+  <div class="mdl-t" id="custMdlT">Хэрэглэгч нэмэх</div>
+  <button class="mdl-x" onclick="closeM('custMdl')">✕</button>
+  <input type="hidden" id="eid"/>
+  <div class="frow"><div class="fg"><label class="fl">Нэр *</label><input type="text" class="fi" id="fn" placeholder="Овог нэр"/></div><div class="fg"><label class="fl">Утас</label><input type="text" class="fi" id="fph" placeholder="+976"/></div></div>
+  <div class="fg"><label class="fl">Имэйл *</label><input type="email" class="fi" id="fem" placeholder="user@email.com"/></div>
+  <div class="frow">
+    <div class="fg"><label class="fl">Гишүүнчлэл</label><select class="fsel" id="fst" onchange="onSub()"><option value="monthly">1 сараар — 12,900₮</option><option value="3month">3 сараар — 31,000₮</option><option value="6month">6 сараар — 50,400₮</option><option value="yearly">12 сараар — 77,400₮</option></select></div>
+    <div class="fg"><label class="fl">Дүн (₮)</label><input type="number" class="fi" id="fam" value="12900"/></div>
+  </div>
+  <div class="frow">
+    <div class="fg"><label class="fl">Эхлэх огноо</label><input type="date" class="fi" id="fsd"/></div>
+    <div class="fg"><label class="fl">Статус</label><select class="fsel" id="fss"><option value="active">Идэвхтэй</option><option value="pending">Хүлээгдэж буй</option><option value="expired">Дууссан</option></select></div>
+  </div>
+  <div class="frow">
+    <div class="fg"><label class="fl">TX Код</label><input type="text" class="fi" id="ftx" placeholder="Автомат"/></div>
+    <div class="fg"><label class="fl">Урилгын код</label><input type="text" class="fi" id="finv" placeholder="Заавал биш"/></div>
+  </div>
+  <div class="fg"><label class="fl">Тэмдэглэл</label><input type="text" class="fi" id="fnt" placeholder="Нэмэлт тэмдэглэл"/></div>
+  <div id="cerr" style="color:var(--red);font-size:0.75rem;display:none;"></div>
+  <div class="mfooter"><button class="btn bts" onclick="closeM('custMdl')">Болих</button><button class="btn btp" id="csavebtn" onclick="saveCust()">Хадгалах</button></div>
+</div>
+</div>
+
+<!-- VERIFY PAYMENT MODAL -->
+<div class="mbg" id="verMdl">
+<div class="mdl mdl-lg">
+  <div class="mdl-t">🏦 M Bank гүйлгээ баталгаажуулах</div>
+  <button class="mdl-x" onclick="closeM('verMdl')">✕</button>
+  <input type="hidden" id="vid"/>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+    <div class="vcard">
+      <div style="font-size:0.63rem;font-weight:700;color:var(--mut2);text-transform:uppercase;letter-spacing:1px;margin-bottom:9px;">Хэрэглэгч</div>
+      <div class="vrow"><span class="vkey">Нэр</span><span class="vval" id="v-n">—</span></div>
+      <div class="vrow"><span class="vkey">Имэйл</span><span class="vval" style="font-size:0.68rem;" id="v-e">—</span></div>
+      <div class="vrow"><span class="vkey">Гишүүнчлэл</span><span id="v-s">—</span></div>
+      <div class="vrow"><span class="vkey">Дүн</span><span class="vval" style="color:var(--grn);font-size:0.95rem;" id="v-a">—</span></div>
+      <div class="vrow"><span class="vkey">Огноо</span><span class="vval" id="v-d">—</span></div>
+    </div>
+    <div>
+      <div class="bankcard">
+        <div class="bankcard-t">🏦 Шилжүүлэх данс</div>
+        <div class="brow"><span class="bkey">Банк</span><span class="bval" id="v-bk">—</span></div>
+        <div class="brow"><span class="bkey">Эзний нэр</span><span class="bval" id="v-bn">—</span></div>
+        <div class="brow"><span class="bkey">Дансны №</span><span class="bval" id="v-ba">—</span><button class="cpbtn" onclick="copyEl('v-ba')">Хуулах</button></div>
+      </div>
+      <div style="font-size:0.65rem;color:var(--mut2);font-weight:700;margin-bottom:5px;">ГҮЙЛГЭЭНИЙ УТГА (TX КОД)</div>
+      <div class="txbig" id="v-tx">—</div>
+      <button class="cpbtn" style="width:100%;padding:5px;text-align:center;" onclick="copyEl('v-tx')">📋 TX Код хуулах</button>
+    </div>
+  </div>
+  <div class="alert aw" style="margin-bottom:12px;"><span>📱</span><div>M Bank app нээж → Гүйлгээний түүх → TX код <strong id="v-tx2">—</strong> бүхий гүйлгээ олно уу. Олдсон бол Баталгаажуулах дарна уу.</div></div>
+  <div class="frow">
+    <div class="fg"><label class="fl">Баталгаажуулалтын статус</label>
+      <select class="fsel" id="vs"><option value="paid">✅ Баталгаажсан — Гүйлгээ олдлоо</option><option value="pending">⏳ Хүлээж байна</option><option value="failed">❌ Цуцалсан</option></select>
+    </div>
+    <div class="fg"><label class="fl">Банкны reference (заавал биш)</label><input type="text" class="fi" id="vref" placeholder="Банкны гүйлгээний дугаар"/></div>
+  </div>
+  <div class="fg"><label class="fl">Тэмдэглэл</label><input type="text" class="fi" id="vnote" placeholder="Нэмэлт тэмдэглэл"/></div>
+  <div class="mfooter">
+    <button class="btn bts" onclick="closeM('verMdl')">Болих</button>
+    <button class="btn btd" onclick="doVerify('failed')">❌ Цуцлах</button>
+    <button class="btn btok" id="vbtn" onclick="doVerify('paid')">✅ Баталгаажуулах</button>
+  </div>
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// PLAN CONFIG
+// ═══════════════════════════════════════════════════
+const PLANS = {
+  monthly: {label:'1 сараар',  days:30,  price:12900},
+  '3month':{label:'3 сараар',  days:90,  price:31000},
+  '6month':{label:'6 сараар',  days:180, price:50400},
+  yearly:  {label:'12 сараар', days:365, price:77400},
+};
+
+// ═══════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════
+let SB = null;           // Supabase client
+let isLocalMode = false;   // true = localStorage only
+let customers = [];
+let payments  = [];
+let payFilter = 'all';
+let custFilter= 'all';
+let toastTmr  = null;
+
+// ═══════════════════════════════════════════════════
+// CONFIG (localStorage)
+// ═══════════════════════════════════════════════════
+const cfg = {
+  get: ()=> JSON.parse(localStorage.getItem('smn_cfg')||'{}'),
+  set: d  => localStorage.setItem('smn_cfg', JSON.stringify(d)),
+  update: patch => { const c=cfg.get(); Object.assign(c,patch); cfg.set(c); },
+};
+const ldb = {
+  custs: ()=> JSON.parse(localStorage.getItem('smn_c')||'[]'),
+  pays:  ()=> JSON.parse(localStorage.getItem('smn_p')||'[]'),
+  savec: d=> localStorage.setItem('smn_c', JSON.stringify(d)),
+  savep: d=> localStorage.setItem('smn_p', JSON.stringify(d)),
+};
+
+// ═══════════════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════════════
+window.onload = () => {
+  tick(); setInterval(tick,1000);
+  const c = cfg.get();
+  if(c.adminPass) {
+    // Credentials exist — skip setup, show login
+    document.getElementById('setup').style.display='none';
+    document.getElementById('login').style.display='flex';
+    // Pre-fill username
+    const luEl = document.getElementById('lu');
+    if(luEl && c.adminUser) luEl.value = c.adminUser;
+    initSB();
+  }
+  // Always hide setup if adminPass exists (belt + suspenders)
+  if(c.adminPass && document.getElementById('setup').style.display !== 'none') {
+    document.getElementById('setup').style.display='none';
+    document.getElementById('login').style.display='flex';
+  }
+};
+function tick(){
+  const el=document.getElementById('clock'); if(el) el.textContent=new Date().toLocaleString('mn-MN');
+}
+
+// ═══════════════════════════════════════════════════
+// SETUP FLOW
+// ═══════════════════════════════════════════════════
+function setStep(n){
+  [1,2,3].forEach(i=>{
+    document.getElementById('s'+i).style.display=i===n?'block':'none';
+    const t=document.getElementById('st'+i);
+    t.className='stab'+(i<n?' done':i===n?' active':'');
+  });
+}
+function validateKey(key){
+  const hint = document.getElementById('keyHint');
+  if(!key){ hint.style.color='var(--mut2)'; hint.textContent='✅ eyJ... (legacy) болон sb_publishable__... (шинэ) аль алийг оруулж болно'; return; }
+  key = key.trim();
+  if(key.startsWith('sb_publishable') || key.startsWith('sb_secret')){
+    hint.style.color='var(--grn)'; hint.textContent='✅ Шинэ формат key — зөв байна'; return;
+  }
+  if(key.startsWith('eyJ')){
+    try{
+      const parts = key.split('.');
+      if(parts.length !== 3){ throw new Error('3 хэсэг байх ёстой, таны key '+parts.length+' хэсэгтэй байна'); }
+      const header = JSON.parse(atob(parts[0]));
+      const payload = JSON.parse(atob(parts[1]));
+      hint.style.color='var(--grn)';
+      hint.textContent='✅ JWT зөв — role: '+(payload.role||'?')+', project: '+(payload.ref||payload.iss||'?');
+    }catch(e){
+      hint.style.color='var(--red)';
+      hint.textContent='❌ JWT буруу: '+e.message+' — Supabase dashboard-аас copy товч дарж хуулна уу';
+    }
+    return;
+  }
+  if(key.length > 0){ hint.style.color='var(--yel)'; hint.textContent='⚠️ Танигдахгүй формат'; }
+}
+
+async function step1(){
+  const url = document.getElementById('sbUrl').value.trim();
+  const key = document.getElementById('sbKey').value.trim();
+  const e   = document.getElementById('s1err');
+  const btn = document.querySelector('#s1 .btp');
+  e.style.display='none';
+
+  if(url && key){
+    btn.textContent='Шалгаж байна...'; btn.disabled=true;
+
+    // Pre-validate key format
+    if(key.startsWith('eyJ')){
+      try{
+        const parts = key.split('.');
+        if(parts.length !== 3) throw new Error('JWT 3 хэсэгтэй байх ёстой, таных '+parts.length+' хэсэгтэй — key дутуу хуулсан байна');
+        JSON.parse(atob(parts[0]));
+        JSON.parse(atob(parts[1]));
+      }catch(err){
+        e.innerHTML='❌ Key буруу: <strong>'+err.message+'</strong><br/>Supabase dashboard → Settings → API → anon key-ийн <strong>📋 copy товч</strong> дарна уу (гараар бүү сонго)';
+        e.style.display='block'; btn.textContent='Холболт шалгах →'; btn.disabled=false; return;
+      }
+    }
+
+    // Validate URL format
+    if(!url.includes('.supabase.co') && !url.includes('localhost')){
+      e.innerHTML='❌ URL буруу: <strong>'+url+'</strong><br/>https://xxxxx.supabase.co хэлбэртэй байх ёстой';
+      e.style.display='block'; btn.textContent='Холболт шалгах →'; btn.disabled=false; return;
+    }
+
+    try{
+      if(typeof supabase === 'undefined' || typeof supabase.createClient === 'undefined'){
+        throw new Error('Supabase library ачаалагдаагүй. F5 дарж дахин оролдоно уу.');
+      }
+      const sb = supabase.createClient(url, key);
+      const {data, error} = await sb.from('customers').select('id').limit(1);
+      const tableNotExist = error && (
+        error.code==='PGRST116' || error.code==='42P01' ||
+        error.message?.includes('does not exist') ||
+        error.message?.includes('relation') ||
+        error.message?.includes('table')
+      );
+      if(error && !tableNotExist){
+        throw new Error(`[${error.code||'ERR'}] ${error.message}`);
+      }
+      cfg.update({sbUrl:url, sbKey:key, useSB:true});
+      btn.textContent='Холболт шалгах →'; btn.disabled=false;
+      showToast(tableNotExist ? '✅ Холбогдлоо! Одоо SQL ажиллуулна уу.' : '✅ Supabase холбогдлоо!', 'success');
+    }catch(err){
+      e.innerHTML='❌ <strong>'+err.message+'</strong><br/><small style="opacity:0.7">URL: '+url+'</small>';
+      e.style.display='block'; btn.textContent='Холболт шалгах →'; btn.disabled=false; return;
+    }
+  } else if(!url && !key){
+    isLocalMode=true; cfg.update({useSB:false});
+  } else {
+    e.textContent='URL болон Key аль алийг оруулна уу'; e.style.display='block'; return;
+  }
+  setStep(2);
+}
+function localMode(){isLocalMode=true;cfg.update({useSB:false});setStep(2);}
+function step2(){
+  cfg.update({bName:el('bName').value,bBank:el('bBank').value,bAcc:el('bAcc').value,bIban:el('bIban').value});
+  setStep(3);
+}
+function finishSetup(){
+  const u=el('aUser').value.trim(),p=el('aPass').value,p2=el('aPass2').value;
+  const e=el('s3err');
+  if(!u){e.textContent='Нэвтрэх нэр оруулна уу';e.style.display='block';return;}
+  if(p.length<6){e.textContent='Нууц үг 6+ тэмдэгт байх ёстой';e.style.display='block';return;}
+  if(p!==p2){e.textContent='Нууц үг таарахгүй байна';e.style.display='block';return;}
+  cfg.update({adminUser:u,adminPass:p});
+  document.getElementById('setup').style.display='none';
+  document.getElementById('login').style.display='flex';
+  initSB(); showToast('Тохиргоо дууслаа!','success');
+}
+
+function initSB(){
+  const c=cfg.get();
+  isLocalMode=!c.useSB;
+  if(!isLocalMode && c.sbUrl && c.sbKey){
+    try{
+      if(typeof supabase !== 'undefined' && typeof supabase.createClient === 'function'){
+        SB=supabase.createClient(c.sbUrl,c.sbKey);
+      } else { isLocalMode=true; }
+    }catch(e){ isLocalMode=true; }
+  }
+  updateDBStatus();
+}
+function updateDBStatus(){
+  const el2=document.getElementById('dbst'), sm=document.getElementById('smode');
+  if(isLocalMode){ el2.textContent='● Local'; el2.className='dbst dberr'; if(sm) sm.textContent='Local storage'; }
+  else{ el2.textContent='● Supabase'; el2.className='dbst dbok'; if(sm) sm.textContent='Supabase DB'; }
+}
+
+// ═══════════════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════════════
+function doLogin(){
+  const c=cfg.get();
+  const u=el('lu').value.trim();
+  const p=el('lp').value.trim();
+  // If no credentials configured yet, go to setup
+  if(!c.adminPass){
+    document.getElementById('login').style.display='none';
+    document.getElementById('setup').style.display='flex';
+    setStep(1);
+    return;
+  }
+  if(u===c.adminUser && p===c.adminPass){
+    document.getElementById('login').style.display='none';
+    document.getElementById('app').style.display='block';
+    el('sav').textContent=u[0].toUpperCase(); el('sname').textContent=u;
+    updateDBStatus(); loadBankPreview(); init();
+  } else {
+    const errEl = el('lerr');
+    errEl.textContent = 'Нэвтрэх нэр эсвэл нууц үг буруу байна.';
+    errEl.style.display='block';
+    el('lp').value='';
+  }
+}
+function doLogout(){
+  document.getElementById('app').style.display='none';
+  document.getElementById('login').style.display='flex';
+  el('lu').value=''; el('lp').value='';
+}
+function resetSetup(){
+  if(!confirm('Тохиргоог дахин хийх үү?')) return;
+  const c=cfg.get(); delete c.adminPass; delete c.adminUser; delete c.sbUrl; delete c.sbKey; delete c.useSB; cfg.set(c);
+  doLogout(); document.getElementById('login').style.display='none'; document.getElementById('setup').style.display='flex'; setStep(1);
+}
+function clearAllData(){
+  if(!confirm('БҮХ өгөгдлийг устгах уу? Энэ үйлдлийг буцааж болохгүй!')) return;
+  ldb.savec([]); ldb.savep([]); customers=[]; payments=[];
+  renderPage(document.querySelector('.page.active').id.replace('page-',''));
+  showToast('Бүх өгөгдөл устгагдлаа','info');
+}
+
+// ═══════════════════════════════════════════════════
+// DB ACCESS LAYER
+// ═══════════════════════════════════════════════════
+async function dbC(){ // get customers
+  if(!isLocalMode && SB){ const {data,error}=await SB.from('customers').select('*').order('created_at',{ascending:false}); if(!error&&data) return data; }
+  return ldb.custs();
+}
+async function dbP(){ // get payments
+  if(!isLocalMode && SB){ const {data,error}=await SB.from('payments').select('*').order('created_at',{ascending:false}); if(!error&&data) return data; }
+  return ldb.pays();
+}
+async function dbSaveC(c){
+  if(!isLocalMode && SB){
+    const {id,...rest}=c;
+    if(id && !String(id).startsWith('L')){ await SB.from('customers').update({...rest,updated_at:new Date().toISOString()}).eq('id',id); }
+    else { const {data}=await SB.from('customers').insert(rest).select().single(); if(data) return data; }
+  }
+  let list=ldb.custs(); const i=list.findIndex(x=>x.id===c.id);
+  if(i>=0) list[i]=c; else list.unshift(c); ldb.savec(list); return c;
+}
+async function dbSaveP(p){
+  if(!isLocalMode && SB){
+    const {id,...rest}=p;
+    if(id && !String(id).startsWith('L')){ await SB.from('payments').update(rest).eq('id',id); }
+    else { const {data}=await SB.from('payments').insert(rest).select().single(); if(data) return data; }
+  }
+  let list=ldb.pays(); const i=list.findIndex(x=>x.id===p.id);
+  if(i>=0) list[i]=p; else list.unshift(p); ldb.savep(list); return p;
+}
+async function dbDelC(id){
+  if(!isLocalMode && SB) await SB.from('customers').delete().eq('id',id);
+  ldb.savec(ldb.custs().filter(c=>c.id!==id));
+}
+async function dbUpdCS(id,status){
+  if(!isLocalMode && SB) await SB.from('customers').update({status,updated_at:new Date().toISOString()}).eq('id',id);
+  const l=ldb.custs(); const i=l.findIndex(c=>c.id===id); if(i>=0){l[i].status=status;ldb.savec(l);}
+}
+async function dbUpdPS(id,status,extra={}){
+  const now=new Date().toISOString();
+  if(!isLocalMode && SB) await SB.from('payments').update({status,verified_at:now,...extra}).eq('id',id);
+  const l=ldb.pays(); const i=l.findIndex(p=>p.id===id); if(i>=0){Object.assign(l[i],{status,verified_at:now,...extra});ldb.savep(l);}
+}
+
+// ═══════════════════════════════════════════════════
+// INIT & NAVIGATION
+// ═══════════════════════════════════════════════════
+async function init(){
+  await loadAll(); renderPage('dashboard'); updateBadges(); autoExpire();
+  loadTgSettings();
+  tgCheckExpiring();
+}
+async function loadAll(){ [customers,payments]=await Promise.all([dbC(),dbP()]); }
+function autoExpire(){
+  const now=new Date();
+  customers.forEach(async c=>{
+    if(c.status==='active' && new Date(c.end_date||c.endDate)<now){ c.status='expired'; await dbUpdCS(c.id,'expired'); }
+  });
+}
+function updateBadges(){
+  const pn=payments.filter(p=>p.status==='pending').length;
+  const en=customers.filter(c=>c.status==='active'&&dl(c.end_date||c.endDate)<=7&&dl(c.end_date||c.endDate)>0).length;
+  const pb=document.getElementById('pb'), eb=document.getElementById('eb');
+  pb.style.display=pn?'inline':'none'; pb.textContent=pn;
+  eb.style.display=en?'inline':'none'; eb.textContent=en;
+}
+const PTITLES={dashboard:'Dashboard',payments:'Төлбөр баталгаажуулах',customers:'Хэрэглэгчид',subs:'Гишүүнчлэл',expiring:'Дуусах дөхсөн',reports:'Тайлан',settings:'Тохиргоо'};
+function go(id,el2){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.snav').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(el2) el2.classList.add('active');
+  document.getElementById('ptitle').textContent=PTITLES[id]||id;
+  renderPage(id);
+}
+function renderPage(id){({dashboard:renderDash,payments:renderPays,customers:renderCusts,subs:renderSubs,expiring:renderExp,reports:renderRep,settings:renderSet})[id]?.();}
+
+// ═══════════════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════════════
+function renderDash(){
+  const now=new Date(), tm=now.toISOString().slice(0,7);
+  const active=customers.filter(c=>c.status==='active').length;
+  const pend=payments.filter(p=>p.status==='pending').length;
+  const rev=payments.filter(p=>p.status==='paid'&&(p.date||p.created_at||'').startsWith(tm)).reduce((s,p)=>s+Number(p.amount||0),0);
+  el('d-total').textContent=customers.length; el('d-active').textContent=active;
+  el('d-pend').textContent=pend; el('d-rev').textContent=fm(rev);
+  // Chart
+  const months=[]; for(let i=5;i>=0;i--){const d=new Date(now.getFullYear(),now.getMonth()-i,1);months.push(d.toISOString().slice(0,7));}
+  const revs=months.map(m=>payments.filter(p=>p.status==='paid'&&(p.date||p.created_at||'').startsWith(m)).reduce((s,p)=>s+Number(p.amount||0),0));
+  const mx=Math.max(...revs,1);
+  const cl=['#7c3aed','#3d4fd1','#10b981','#f59e0b','#38bdf8','#f97316'];
+  const mn=['1-р','2-р','3-р','4-р','5-р','6-р','7-р','8-р','9-р','10-р','11-р','12-р'];
+  el('rchart').innerHTML=revs.map((r,i)=>`<div class="barcol" title="${mn[new Date(months[i]).getMonth()]} сар: ${fm(r)}"><div class="bar" style="height:${Math.max(3,r/mx*82)}px;background:${cl[i]};"></div><div class="barlbl">${mn[new Date(months[i]).getMonth()]}</div></div>`).join('');
+  // Pending list
+  const pl=payments.filter(p=>p.status==='pending').slice(0,5);
+  el('d-plist').innerHTML=pl.length?pl.map(p=>`<tr><td><div style="display:flex;align-items:center;gap:7px;">${ua(p.customer_name||p.customerName)}<span>${p.customer_name||p.customerName||'—'}</span></div></td><td><span class="mono" style="color:var(--acc3);">${p.tx_code||p.txCode||'—'}</span></td><td class="mono">${fm(p.amount)}</td><td class="mono">${fd(p.date||p.created_at)}</td><td><button class="btn btw btsm" onclick="openVerify('${p.id}')">🔍 Шалгах</button></td></tr>`).join(''):`<tr><td colspan="5"><div class="empty">✅ Хүлээгдэж буй төлбөр байхгүй</div></td></tr>`;
+}
+
+// ═══════════════════════════════════════════════════
+// PAYMENTS
+// ═══════════════════════════════════════════════════
+async function loadPays(){ payments=await dbP(); renderPays(); updateBadges(); }
+function fpay(f,el2){ payFilter=f; document.querySelectorAll('#ptabs .ftab').forEach(t=>t.classList.remove('active')); el2.classList.add('active'); renderPays(); }
+function searchPay(q){ renderPays(q); }
+function renderPays(q=''){
+  let list=[...payments];
+  if(payFilter!=='all') list=list.filter(p=>p.status===payFilter);
+  if(q) list=list.filter(p=>((p.tx_code||p.txCode||'')+(p.customer_name||p.customerName||'')+(p.email||'')).toLowerCase().includes(q.toLowerCase()));
+  list.sort((a,b)=>new Date(b.created_at||b.date||0)-new Date(a.created_at||a.date||0));
+  el('p-list').innerHTML=list.length?list.map(p=>`<tr>
+    <td><span class="mono" style="color:var(--acc3);font-weight:700;">${p.tx_code||p.txCode||'—'}</span></td>
+    <td><div style="display:flex;align-items:center;gap:7px;">${ua(p.customer_name||p.customerName)}<div><div style="font-weight:600;">${p.customer_name||p.customerName||'—'}</div><div class="mono" style="color:var(--mut2);font-size:0.66rem;">${p.email||''}</div></div></div></td>
+    <td class="mono" style="font-weight:700;">${fm(p.amount)}</td>
+    <td>${sb(p.sub_type||p.subType)}</td>
+    <td class="mono">${fd(p.date||p.created_at)}</td>
+    <td>${pb2(p.status)}</td>
+    <td>${p.status==='pending'?`<button class="btn btw btsm" onclick="openVerify('${p.id}')">🔍 Шалгах</button>`:p.status==='paid'?`<span style="font-size:0.7rem;color:var(--grn);">✓ Баталгаажсан</span>`:`<span style="font-size:0.7rem;color:var(--red);">✗ Цуцалсан</span>`}</td>
+  </tr>`).join(''):`<tr><td colspan="7"><div class="empty">💳 Жагсаалт хоосон байна</div></td></tr>`;
+}
+
+// ═══════════════════════════════════════════════════
+// VERIFY — M Bank Core Workflow
+// ═══════════════════════════════════════════════════
+function openVerify(pid){
+  const p=payments.find(x=>x.id===pid); if(!p) return;
+  const c=cfg.get();
+  el('vid').value=pid;
+  el('v-n').textContent=p.customer_name||p.customerName||'—';
+  el('v-e').textContent=p.email||'—';
+  el('v-s').innerHTML=sb(p.sub_type||p.subType);
+  el('v-a').textContent=fm(p.amount);
+  el('v-d').textContent=fd(p.date||p.created_at);
+  el('v-bk').textContent=c.bBank||'M Bank';
+  el('v-bn').textContent=c.bName||'—';
+  el('v-ba').textContent=c.bAcc||'—';
+  const tx=p.tx_code||p.txCode||'—';
+  el('v-tx').textContent=tx; el('v-tx2').textContent=tx;
+  el('vs').value=p.status==='paid'?'paid':'pending';
+  el('vnote').value=p.verified_note||p.note||'';
+  el('vref').value=p.bank_ref||'';
+  document.getElementById('verMdl').classList.add('open');
+}
+async function doVerify(forceStatus){
+  const id=el('vid').value;
+  const status=forceStatus||el('vs').value;
+  const note=el('vnote').value, ref=el('vref').value;
+  const btn=el('vbtn'); btn.textContent='Хадгалж байна...'; btn.disabled=true;
+  await dbUpdPS(id,status,{verified_note:note,bank_ref:ref});
+  // If paid → activate customer
+  if(status==='paid'){
+    const p=payments.find(x=>x.id===id);
+    const cid=p?.customer_id||p?.customerId;
+    if(cid){
+      const plan=PLANS[p.sub_type||p.subType];
+      const start=new Date(), end=new Date(start); end.setDate(end.getDate()+(plan?.days||30));
+      const cust=customers.find(c=>c.id===cid);
+      if(cust){
+        cust.status='active';
+        cust.start_date=cust.startDate=start.toISOString().slice(0,10);
+        cust.end_date=cust.endDate=end.toISOString().slice(0,10);
+        await dbSaveC(cust);
+      }
+    }
+  }
+  [customers,payments]=await Promise.all([dbC(),dbP()]);
+  closeM('verMdl'); btn.textContent='✅ Баталгаажуулах'; btn.disabled=false;
+  updateBadges();
+  renderPage(document.querySelector('.page.active').id.replace('page-',''));
+  showToast(status==='paid'?'✅ Гүйлгээ баталгаажсан — Гишүүнчлэл идэвхлэгдлээ!':status==='failed'?'❌ Гүйлгээ цуцалсан':'⏳ Статус шинэчлэгдлээ',status==='paid'?'success':'info');
+  // Telegram notification
+  if(status==='paid'){
+    const p2=payments.find(x=>x.id===id);
+    const cust=customers.find(c=>c.id===(p2?.customer_id||p2?.customerId));
+    if(cust) await tgNotifyVerified(cust.name, p2?.amount||0, cust.end_date||cust.endDate||'');
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// CUSTOMERS
+// ═══════════════════════════════════════════════════
+async function loadCusts(){ customers=await dbC(); renderCusts(); }
+function fcust(f,el2){ custFilter=f; document.querySelectorAll('#ctabs .ftab').forEach(t=>t.classList.remove('active')); el2.classList.add('active'); renderCusts(); }
+function searchCust(q){ renderCusts(q); }
+function renderCusts(q=''){
+  let list=[...customers];
+  if(custFilter==='active') list=list.filter(c=>c.status==='active');
+  if(custFilter==='expired') list=list.filter(c=>c.status!=='active');
+  if(q) list=list.filter(c=>((c.name||'')+(c.email||'')+(c.id||'')).toLowerCase().includes(q.toLowerCase()));
+  el('c-list').innerHTML=list.length?list.map(c=>{
+    const end=c.end_date||c.endDate, d=dl(end);
+    return `<tr>
+      <td><div style="display:flex;align-items:center;gap:7px;">${ua(c.name)}<div><div style="font-weight:600;">${c.name||'—'}</div><div class="mono" style="color:var(--mut2);font-size:0.65rem;">${c.id}</div></div></div></td>
+      <td class="mono" style="color:var(--mut2);">${c.email||'—'}</td>
+      <td>${sb(c.sub_type||c.subType)}</td>
+      <td class="mono">${fd(c.start_date||c.startDate)}</td>
+      <td class="mono">${fd(end)}</td>
+      <td class="${d<=0?'dd':d<=7?'dw':'dok'} mono">${d<=0?'Дууссан':d+' өдөр'}</td>
+      <td>${stb(c.status)}</td>
+      <td><div style="display:flex;gap:3px;">
+        <button class="btn bts btsm" onclick="openEdit('${c.id}')">✏️</button>
+        <button class="btn btok btsm" onclick="renew('${c.id}')">🔄</button>
+        <button class="btn btd btsm" onclick="delC('${c.id}')">🗑</button>
+      </div></td>
+    </tr>`;}).join(''):`<tr><td colspan="8"><div class="empty">👥 Хэрэглэгч олдсонгүй</div></td></tr>`;
+}
+function openAdd(){
+  el('eid').value=''; el('custMdlT').textContent='Хэрэглэгч нэмэх';
+  el('fn').value=''; el('fem').value=''; el('fph').value=''; el('fnt').value=''; el('finv').value='';
+  el('fst').value='monthly'; el('fam').value=12900; el('fss').value='active';
+  el('ftx').value=genCode(); el('fsd').value=new Date().toISOString().slice(0,10);
+  el('cerr').style.display='none'; document.getElementById('custMdl').classList.add('open');
+}
+function openEdit(id){
+  const c=customers.find(x=>x.id===id); if(!c) return;
+  el('eid').value=id; el('custMdlT').textContent='Хэрэглэгч засах';
+  el('fn').value=c.name||''; el('fem').value=c.email||''; el('fph').value=c.phone||'';
+  el('fnt').value=c.note||''; el('finv').value=c.invite_code||c.inviteCode||'';
+  el('fst').value=c.sub_type||c.subType||'monthly'; el('fam').value=c.amount||12900;
+  el('fss').value=c.status||'active'; el('ftx').value=c.tx_code||c.txCode||'';
+  el('fsd').value=c.start_date||c.startDate||new Date().toISOString().slice(0,10);
+  el('cerr').style.display='none'; document.getElementById('custMdl').classList.add('open');
+}
+async function saveCust(){
+  const name=el('fn').value.trim(), email=el('fem').value.trim();
+  const cerr=el('cerr');
+  if(!name||!email){cerr.textContent='Нэр болон имэйл шаардлагатай';cerr.style.display='block';return;}
+  const id=el('eid').value, sub=el('fst').value, start=el('fsd').value;
+  const days=PLANS[sub]?.days||30;
+  const end=new Date(start); end.setDate(end.getDate()+days);
+  const btn=el('csavebtn'); btn.textContent='Хадгалж байна...'; btn.disabled=true;
+  const rec={
+    id:id||('L'+Date.now()), name, email, phone:el('fph').value,
+    sub_type:sub, subType:sub, amount:Number(el('fam').value),
+    start_date:start, startDate:start,
+    end_date:end.toISOString().slice(0,10), endDate:end.toISOString().slice(0,10),
+    status:el('fss').value, tx_code:el('ftx').value, txCode:el('ftx').value,
+    invite_code:el('finv').value, note:el('fnt').value,
+    created_at:id?customers.find(c=>c.id===id)?.created_at:new Date().toISOString(),
+  };
+  await dbSaveC(rec);
+  if(!id){
+    await dbSaveP({id:'L'+Date.now()+'p',customer_id:rec.id,customerId:rec.id,customer_name:name,customerName:name,email,amount:rec.amount,sub_type:sub,subType:sub,tx_code:rec.tx_code,txCode:rec.tx_code,bank:cfg.get().bBank||'M Bank',date:start,status:rec.status==='active'?'paid':'pending',created_at:new Date().toISOString()});
+    // Telegram: notify new payment
+    if(rec.status==='active'){
+      await tgNotifyVerified(name, rec.amount, rec.end_date||rec.endDate||'');
+    } else {
+      await tgNotifyNewPayment(name, rec.amount, rec.tx_code||rec.txCode||'', sub);
+    }
+  }
+  [customers,payments]=await Promise.all([dbC(),dbP()]);
+  closeM('custMdl'); btn.textContent='Хадгалах'; btn.disabled=false;
+  updateBadges(); renderPage(document.querySelector('.page.active').id.replace('page-',''));
+  showToast(id?'Хэрэглэгч шинэчлэгдлээ':'Хэрэглэгч нэмэгдлээ','success');
+}
+async function delC(id){ if(!confirm('Устгах уу?')) return; await dbDelC(id); customers=await dbC(); renderCusts(); updateBadges(); showToast('Устгагдлаа','info'); }
+async function renew(id){
+  const c=customers.find(x=>x.id===id); if(!c) return;
+  const d=PLANS[c.sub_type||c.subType]?.days||30;
+  const s=new Date(), e=new Date(s); e.setDate(e.getDate()+d);
+  c.start_date=c.startDate=s.toISOString().slice(0,10);
+  c.end_date=c.endDate=e.toISOString().slice(0,10);
+  c.status='active'; c.tx_code=c.txCode=genCode();
+  await dbSaveC(c);
+  await dbSaveP({id:'L'+Date.now()+'r',customer_id:id,customerId:id,customer_name:c.name,customerName:c.name,email:c.email,amount:c.amount,sub_type:c.sub_type||c.subType,subType:c.sub_type||c.subType,tx_code:c.tx_code,txCode:c.tx_code,bank:cfg.get().bBank||'M Bank',date:c.start_date,status:'paid',created_at:new Date().toISOString()});
+  [customers,payments]=await Promise.all([dbC(),dbP()]);
+  renderPage(document.querySelector('.page.active').id.replace('page-',''));
+  updateBadges(); showToast(`${c.name}-ийн гишүүнчлэл сунгагдлаа`,'success');
+}
+function onSub(){ el('fam').value=PLANS[el('fst').value]?.price||12900; }
+
+// ═══════════════════════════════════════════════════
+// SUBSCRIPTIONS
+// ═══════════════════════════════════════════════════
+function renderSubs(){
+  ['monthly','3month','6month','yearly'].forEach(t=>{
+    const eid={monthly:'sm','3month':'s3','6month':'s6',yearly:'sy'}[t];
+    el(eid).textContent=customers.filter(c=>(c.sub_type||c.subType)===t&&c.status==='active').length;
+  });
+  el('sub-list').innerHTML=customers.map(c=>{
+    const end=c.end_date||c.endDate, d=dl(end);
+    return `<tr><td><div style="display:flex;align-items:center;gap:7px;">${ua(c.name)}<span>${c.name||'—'}</span></div></td><td>${sb(c.sub_type||c.subType)}</td><td class="mono">${fm(c.amount)}</td><td class="mono">${fd(c.start_date||c.startDate)}</td><td class="mono">${fd(end)}</td><td class="${d<=0?'dd':d<=7?'dw':'dok'} mono">${d<=0?'Дууссан':d+' өдөр'}</td><td>${stb(c.status)}</td><td><button class="btn btok btsm" onclick="renew('${c.id}')">🔄 Сунгах</button></td></tr>`;}).join('');
+}
+
+// EXPIRING
+function renderExp(){
+  const list=customers.filter(c=>c.status==='active'&&dl(c.end_date||c.endDate)<=7&&dl(c.end_date||c.endDate)>0).sort((a,b)=>dl(a.end_date||a.endDate)-dl(b.end_date||b.endDate));
+  el('exp-list').innerHTML=list.length?list.map(c=>`<tr><td><div style="display:flex;align-items:center;gap:7px;">${ua(c.name)}<strong>${c.name}</strong></div></td><td class="mono" style="color:var(--mut2);">${c.email||'—'}</td><td class="mono">${fd(c.end_date||c.endDate)}</td><td class="dw mono">${dl(c.end_date||c.endDate)} өдөр</td><td>${sb(c.sub_type||c.subType)}</td><td><div style="display:flex;gap:3px;"><button class="btn btok btsm" onclick="renew('${c.id}')">🔄 Сунгах</button><button class="btn bts btsm" onclick="showToast('${c.name}-д мэдэгдэл илгээгдлээ','info')">📧</button></div></td></tr>`).join(''):`<tr><td colspan="6"><div class="empty">✅ Дуусах дөхсөн гишүүн байхгүй</div></td></tr>`;
+}
+
+// REPORTS
+function renderRep(){
+  const paid=payments.filter(p=>p.status==='paid');
+  const tot=paid.reduce((s,p)=>s+Number(p.amount||0),0);
+  el('r-tot').textContent=fm(tot);
+  el('r-avg').textContent=fm(customers.length?Math.round(tot/customers.length):0);
+  el('r-cnt').textContent=paid.length;
+  const ts=[{k:'monthly',l:'1 сараар',c:'var(--blu)'},{k:'3month',l:'3 сараар',c:'var(--acc)'},{k:'6month',l:'6 сараар',c:'var(--org)'},{k:'yearly',l:'12 сараар',c:'var(--yel)'}];
+  const mx2=Math.max(...ts.map(t=>customers.filter(c=>(c.sub_type||c.subType)===t.k).length),1);
+  el('subChart').innerHTML=ts.map(t=>{const cnt=customers.filter(c=>(c.sub_type||c.subType)===t.k).length;const rev=paid.filter(p=>(p.sub_type||p.subType)===t.k).reduce((s,p)=>s+Number(p.amount||0),0);return`<div style="display:flex;align-items:center;gap:10px;"><div style="width:65px;font-size:0.72rem;color:var(--mut2);">${t.l}</div><div class="mb-wrap" style="flex:1;"><div class="mb-bg"><div class="mb-fill" style="width:${cnt/mx2*100}%;background:${t.c};"></div></div><span class="mono" style="font-size:0.7rem;width:22px;text-align:right;">${cnt}</span></div><div class="mono" style="width:72px;text-align:right;font-size:0.7rem;color:var(--mut2);">${fm(rev)}</div></div>`;}).join('');
+}
+
+// SETTINGS
+function loadBankPreview(){
+  const c=cfg.get();
+  el('cfg-bank').textContent=c.bBank||'—'; el('cfg-name').textContent=c.bName||'—';
+  el('cfg-acc').textContent=c.bAcc||'—'; el('cfg-iban').textContent=c.bIban||'—';
+}
+function renderSet(){
+  const c=cfg.get();
+  el('set-bank').value=c.bBank||''; el('set-name').value=c.bName||'';
+  el('set-acc').value=c.bAcc||''; el('set-iban').value=c.bIban||'';
+  loadBankPreview();
+}
+// ═══════════════════════════════════════════════════
+// TELEGRAM BOT
+// ═══════════════════════════════════════════════════
+function tgCfg(){ const c=cfg.get(); return {token:c.tgToken||'', uid:c.tgUid||''}; }
+
+async function tgSend(msg){
+  const {token,uid}=tgCfg();
+  if(!token||!uid) return false;
+  try{
+    const res=await fetch(`https://api.telegram.org/bot${token}/sendMessage`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({chat_id:uid, text:msg, parse_mode:'HTML'})
+    });
+    const data=await res.json();
+    return data.ok;
+  }catch(e){ return false; }
+}
+
+function saveTgSettings(){
+  const token=el('tg-token').value.trim();
+  const uid=el('tg-uid').value.trim();
+  if(!token||!uid){ showToast('Token болон User ID оруулна уу','error'); return; }
+  cfg.update({tgToken:token, tgUid:uid});
+  el('tg-status').style.color='var(--grn)';
+  el('tg-status').textContent='✅ Хадгалагдлаа';
+  showToast('Telegram тохиргоо хадгалагдлаа','success');
+}
+
+async function testTgBot(){
+  const {token,uid}=tgCfg();
+  if(!token||!uid){ showToast('Эхлээд Token болон User ID оруулж хадгална уу','error'); return; }
+  el('tg-status').style.color='var(--mut2)';
+  el('tg-status').textContent='Илгээж байна...';
+  const ok=await tgSend(`🤖 <b>StreamMN Admin Bot</b>\n\n✅ Bot амжилттай холбогдлоо!\n📅 ${new Date().toLocaleString('mn-MN')}`);
+  if(ok){
+    el('tg-status').style.color='var(--grn)';
+    el('tg-status').textContent='✅ Мэдэгдэл амжилттай илгээгдлээ!';
+    showToast('Telegram мэдэгдэл илгээгдлээ ✅','success');
+  } else {
+    el('tg-status').style.color='var(--red)';
+    el('tg-status').textContent='❌ Илгээгдсэнгүй — Token эсвэл User ID буруу байна';
+    showToast('Telegram алдаа — token шалгана уу','error');
+  }
+}
+
+async function tgNotifyNewPayment(customerName, amount, txCode, subType){
+  const planNames={monthly:'1 сар',['3month']:'3 сар',['6month']:'6 сар',yearly:'12 сар'};
+  await tgSend(
+`💰 <b>Шинэ төлбөр орлоо!</b>
+
+👤 Хэрэглэгч: <b>${customerName}</b>
+💵 Дүн: <b>${Number(amount).toLocaleString()}₮</b>
+📦 Төрөл: ${planNames[subType]||subType}
+🔑 TX код: <code>${txCode}</code>
+📅 ${new Date().toLocaleString('mn-MN')}
+
+👉 Admin panel дээр баталгаажуулна уу`
+  );
+}
+
+async function tgNotifyVerified(customerName, amount, endDate){
+  await tgSend(
+`✅ <b>Гишүүнчлэл идэвхлэгдлээ!</b>
+
+👤 Хэрэглэгч: <b>${customerName}</b>
+💵 Дүн: <b>${Number(amount).toLocaleString()}₮</b>
+📅 Дуусах огноо: <b>${endDate}</b>`
+  );
+}
+
+async function tgNotifyExpiring(customerName, daysLeft, endDate){
+  await tgSend(
+`⚠️ <b>Гишүүнчлэл дуусах дөхжээ!</b>
+
+👤 Хэрэглэгч: <b>${customerName}</b>
+⏳ Үлдсэн хоног: <b>${daysLeft} өдөр</b>
+📅 Дуусах огноо: <b>${endDate}</b>
+
+📲 Сунгахыг санал болгоно уу`
+  );
+}
+
+// Check expiring subscriptions and notify (called on init)
+async function tgCheckExpiring(){
+  const {token,uid}=tgCfg();
+  if(!token||!uid) return;
+  const today=new Date();
+  const soon=customers.filter(c=>{
+    if(c.status!=='active') return false;
+    const end=new Date(c.end_date||c.endDate||'');
+    const diff=Math.ceil((end-today)/(1000*60*60*24));
+    return diff>=0 && diff<=3;
+  });
+  for(const c of soon){
+    const diff=Math.ceil((new Date(c.end_date||c.endDate)-today)/(1000*60*60*24));
+    await tgNotifyExpiring(c.name, diff, c.end_date||c.endDate);
+  }
+}
+
+function loadTgSettings(){
+  const c=cfg.get();
+  if(el('tg-token')){ el('tg-token').value=c.tgToken||''; }
+  if(el('tg-uid'))  { el('tg-uid').value=c.tgUid||''; }
+  if(c.tgToken&&c.tgUid&&el('tg-status')){
+    el('tg-status').style.color='var(--grn)';
+    el('tg-status').textContent='✅ Bot тохируулагдсан';
+  }
+}
+function saveSettings(){ cfg.update({bBank:el('set-bank').value,bName:el('set-name').value,bAcc:el('set-acc').value,bIban:el('set-iban').value}); loadBankPreview(); showToast('M Bank мэдээлэл хадгалагдлаа','success'); }
+function changePass(){ const p=el('np1').value,p2=el('np2').value; if(p.length<6){showToast('Нууц үг 6+ тэмдэгт','error');return;} if(p!==p2){showToast('Нууц үг таарахгүй','error');return;} cfg.update({adminPass:p}); el('np1').value=''; el('np2').value=''; showToast('Нууц үг солигдлоо','success'); }
+
+// ═══════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════
+function el(id){return document.getElementById(id);}
+function dl(d){if(!d)return -1;return Math.ceil((new Date(d)-new Date())/(86400000));}
+function fd(d){if(!d)return'—';try{return new Date(d).toLocaleDateString('mn-MN');}catch{return'—';}}
+function fm(n){return Number(n||0).toLocaleString()+'₮';}
+function genCode(){return Math.random().toString(36).substring(2,10).toUpperCase();}
+function ua(name){return`<div class="ua">${(name||'?')[0].toUpperCase()}</div>`;}
+function stb(s){const m={active:'b-active',expired:'b-expired',pending:'b-pending'};const l={active:'Идэвхтэй',expired:'Дууссан',pending:'Хүлээгдэж буй'};return`<span class="badge ${m[s]||''}">${l[s]||s}</span>`;}
+function pb2(s){const m={paid:'b-paid',failed:'b-failed',pending:'b-pending'};const l={paid:'Баталгаажсан',failed:'Цуцалсан',pending:'Хүлээгдэж буй'};return`<span class="badge ${m[s]||''}">${l[s]||s}</span>`;}
+function sb(t){const m={monthly:'b-monthly','3month':'b-3month','6month':'b-6month',yearly:'b-yearly'};const l={monthly:'1 сар','3month':'3 сар','6month':'6 сар',yearly:'12 сар'};return`<span class="badge ${m[t]||''}">${l[t]||t||'—'}</span>`;}
+function copyEl(id){const t=document.getElementById(id).textContent;navigator.clipboard.writeText(t).catch(()=>{});showToast('Хуулагдлаа: '+t,'info');}
+function closeM(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.mbg').forEach(m=>{m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');});});
+function showToast(msg,type='success'){const e=el('toast');const icons={success:'✅',error:'❌',info:'ℹ️'};e.innerHTML=`${icons[type]||''} ${msg}`;e.className=`toast show ${type}`;clearTimeout(toastTmr);toastTmr=setTimeout(()=>e.classList.remove('show'),3500);}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.mbg.open').forEach(m=>m.classList.remove('open'));});
+document.getElementById('lu').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+document.getElementById('lp').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+</script>
+</body>
+</html>
