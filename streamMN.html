@@ -684,53 +684,67 @@ input:checked + .sw::after{transform:translateX(20px);}
       <button id="subscribe-btn" onclick="goToPayment()" style="width:100%;background:#7c3aed;color:#fff;padding:15px;border-radius:10px;border:none;font-size:1rem;font-weight:700;cursor:pointer;margin-top:16px;font-family:'DM Sans',sans-serif;opacity:0.5;pointer-events:none;" id="continue-btn">Үргэлжлүүлэх</button>
     </div>
 
-    <!-- STEP 2: Payment -->
+    <!-- STEP 2: QPay Payment -->
     <div id="step-payment" style="display:none;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-        <div style="font-size:1.1rem;font-weight:700;">Гүйлгээ шалгах</div>
-        <button onclick="backToPlans()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);color:#ccc;padding:7px 16px;border-radius:8px;cursor:pointer;font-size:0.85rem;font-family:'DM Sans',sans-serif;">Буцах</button>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <div style="font-size:1.1rem;font-weight:700;">QPay-ээр төлөх</div>
+        <button onclick="backToPlans()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);color:#ccc;padding:7px 16px;border-radius:8px;cursor:pointer;font-size:0.85rem;font-family:'DM Sans',sans-serif;">← Буцах</button>
       </div>
-      <p style="font-size:0.85rem;color:#8892a4;margin-bottom:20px;line-height:1.6;">Доорх данс руу сонгосон дүнгээ оруулаад, гүйлгээний утга дээр кодоо бичээд дараа нь "Гүйлгээ шалгах" дээр дарна.</p>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
-        <!-- Bank info -->
-        <div style="background:#1a2235;border-radius:12px;padding:18px;">
-          <div style="font-size:0.75rem;color:#8892a4;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">Данс</div>
-          <div style="font-size:1rem;font-weight:700;margin-bottom:4px;">M Bank</div>
-          <div style="font-size:0.85rem;color:#aaa;margin-bottom:14px;">МӨНХЗУЛ БАТХУЯГ</div>
-          <div style="font-size:0.72rem;color:#8892a4;margin-bottom:3px;">Дансны дугаар</div>
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-            <div style="font-size:1rem;font-weight:600;">8000652700</div>
-            <button onclick="copyText('8000652700',this)" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);color:#ccc;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:0.75rem;font-family:'DM Sans',sans-serif;">Хуулах</button>
-          </div>
-          <div style="font-size:0.72rem;color:#8892a4;margin-bottom:3px;">IBAN</div>
-          <div style="display:flex;align-items:center;justify-content:space-between;">
-            <div style="font-size:0.9rem;font-weight:600;">370039008000652700</div>
-            <button onclick="copyText('370039008000652700',this)" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);color:#ccc;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:0.75rem;font-family:'DM Sans',sans-serif;">Хуулах</button>
+      <!-- QPay logo + amount -->
+      <div style="text-align:center;margin-bottom:20px;">
+        <div style="display:inline-flex;align-items:center;gap:10px;background:#1a2235;border-radius:12px;padding:12px 24px;border:1px solid #2a3550;">
+          <div style="width:36px;height:36px;background:#0066ff;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:1rem;">Q</div>
+          <div>
+            <div style="font-size:0.72rem;color:#8892a4;">QPay · Khanbank</div>
+            <div style="font-size:1.3rem;font-weight:800;" id="pay-amount-display">—</div>
           </div>
         </div>
-        <!-- Amount -->
-        <div style="background:#1a2235;border-radius:12px;padding:18px;">
-          <div style="font-size:0.75rem;color:#8892a4;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">Төлөх дүн</div>
-          <div style="font-size:2rem;font-weight:700;margin-bottom:16px;" id="pay-amount-display">—</div>
-          <button onclick="copyText(document.getElementById('pay-amount-raw').value,this)" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);color:#ccc;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:0.75rem;font-family:'DM Sans',sans-serif;">Хуулах</button>
-          <input id="pay-amount-raw" type="hidden" value=""/>
+        <input id="pay-amount-raw" type="hidden" value=""/>
+      </div>
+
+      <!-- QR code section -->
+      <div style="text-align:center;margin-bottom:20px;">
+        <div id="qpay-qr-box" style="display:inline-block;background:#fff;border-radius:16px;padding:16px;position:relative;min-width:200px;min-height:200px;">
+          <div id="qpay-qr-loading" style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:200px;height:200px;gap:12px;">
+            <div style="width:40px;height:40px;border:3px solid #0066ff;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+            <div style="color:#333;font-size:0.78rem;font-weight:600;">QR үүсгэж байна...</div>
+          </div>
+          <img id="qpay-qr-img" src="" alt="QPay QR" style="display:none;width:200px;height:200px;border-radius:8px;" onerror="showQPayError()"/>
+        </div>
+        <div style="font-size:0.78rem;color:#8892a4;margin-top:10px;">Та QPay QR уншигч ашиглан дурын банкны аппаар уншуулж төлнө үү</div>
+      </div>
+
+      <!-- Supported banks -->
+      <div style="margin-bottom:20px;">
+        <div style="font-size:0.72rem;color:#8892a4;text-align:center;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px;">Дараах банкуудаар төлөх боломжтой</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;">
+          <span style="background:#1a2235;border:1px solid #2a3550;border-radius:6px;padding:5px 12px;font-size:0.72rem;color:#aaa;">🏦 Khanbank</span>
+          <span style="background:#1a2235;border:1px solid #2a3550;border-radius:6px;padding:5px 12px;font-size:0.72rem;color:#aaa;">🏦 Golomt</span>
+          <span style="background:#1a2235;border:1px solid #2a3550;border-radius:6px;padding:5px 12px;font-size:0.72rem;color:#aaa;">🏦 TDB</span>
+          <span style="background:#1a2235;border:1px solid #2a3550;border-radius:6px;padding:5px 12px;font-size:0.72rem;color:#aaa;">🏦 Capitron</span>
+          <span style="background:#1a2235;border:1px solid #2a3550;border-radius:6px;padding:5px 12px;font-size:0.72rem;color:#aaa;">🏦 State Bank</span>
+          <span style="background:#1a2235;border:1px solid #2a3550;border-radius:6px;padding:5px 12px;font-size:0.72rem;color:#aaa;">🏦 M Bank</span>
+          <span style="background:#1a2235;border:1px solid #2a3550;border-radius:6px;padding:5px 12px;font-size:0.72rem;color:#aaa;">🏦 Bogd Bank</span>
+          <span style="background:#1a2235;border:1px solid #2a3550;border-radius:6px;padding:5px 12px;font-size:0.72rem;color:#aaa;">+ бусад</span>
         </div>
       </div>
 
-      <!-- Transaction code -->
-      <div style="background:#1a2235;border-radius:12px;padding:18px;margin-bottom:14px;">
-        <div style="font-size:0.75rem;color:#8892a4;margin-bottom:6px;">Код (гүйлгээний утга дээр бичнэ)</div>
-        <div style="display:flex;align-items:center;justify-content:space-between;">
-          <div style="font-size:1.5rem;font-weight:700;letter-spacing:2px;" id="tx-code">XXXXXXXX</div>
-          <button onclick="copyText(document.getElementById('tx-code').textContent,this)" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);color:#ccc;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:0.75rem;font-family:'DM Sans',sans-serif;">Хуулах</button>
+      <!-- TX code reference -->
+      <div style="background:#1a2235;border-radius:12px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:0.68rem;color:#8892a4;margin-bottom:3px;text-transform:uppercase;letter-spacing:0.5px;">Гүйлгээний дугаар</div>
+          <div style="font-size:1.2rem;font-weight:700;letter-spacing:2px;" id="tx-code">XXXXXXXX</div>
         </div>
+        <button onclick="copyText(document.getElementById('tx-code').textContent,this)" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);color:#ccc;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:0.75rem;font-family:'DM Sans',sans-serif;">Хуулах</button>
       </div>
 
-      <!-- Check button -->
-      <button id="check-btn" onclick="doCheckPayment()" style="width:100%;background:#7c3aed;color:#fff;padding:15px;border-radius:10px;border:none;font-size:1rem;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">
-        <span id="check-btn-label">Гүйлгээ шалгах • <span id="check-amount-label">—</span></span>
+      <!-- Check payment button -->
+      <button id="check-btn" onclick="doCheckPayment()" style="width:100%;background:linear-gradient(135deg,#0066ff,#0044cc);color:#fff;padding:15px;border-radius:10px;border:none;font-size:1rem;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;">
+        <span style="font-size:1.2rem;">✓</span>
+        <span id="check-btn-label">Төлбөр шалгах · <span id="check-amount-label">—</span></span>
       </button>
+      <div style="text-align:center;font-size:0.78rem;color:#8892a4;margin-top:10px;">Төлбөр хийсний дараа "Төлбөр шалгах" дарна уу</div>
       <div id="pay-status-msg" style="text-align:center;font-size:0.82rem;color:#e57373;margin-top:10px;display:none;">Одоохондоо олдсонгүй. 10–60 секунд хүлээгээд дахин оролдоорой.</div>
     </div>
 
@@ -1266,8 +1280,9 @@ input:checked + .sw::after{transform:translateX(20px);}
   <!-- IFRAME — takes full space, z-index 1 so controls overlay it -->
   <iframe id="fullPlayerIframe"
     allowfullscreen
-    allow="autoplay; fullscreen; picture-in-picture"
-    sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
+    allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+    sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-popups"
+    referrerpolicy="no-referrer"
     style="position:absolute;inset:0;width:100%;height:100%;border:none;z-index:1;"
     onload="onIframeLoad(this)">
   </iframe>
@@ -2087,10 +2102,10 @@ function toggleAccountMenu() {
 function closeAccountMenu() { const dd = document.getElementById('account-dropdown'); if(dd) dd.style.display='none'; }
 function doLogout() {
   isLoggedIn=false; isSubscribed=false; userEmail='';
+  localStorage.removeItem('smn_user');
   currentMovie=null; currentServerIndex=0;
   document.getElementById('nav-login-btn').style.display='flex';
   document.getElementById('nav-account-btn').style.display='none';
-  // Close any open modals
   document.getElementById('playerModal').classList.remove('open');
   document.getElementById('playerPage').style.display='none';
   document.getElementById('fullPlayerIframe').src='';
@@ -2098,12 +2113,31 @@ function doLogout() {
   closeAccountMenu();
   showNotif('StreamMN','Амжилттай гарлаа!');
 }
-function setLoggedIn(email) {
+function setLoggedIn(email, remember=true) {
   isLoggedIn=true; userEmail=email;
+  // Save to localStorage so login persists across page refreshes
+  if(remember) {
+    localStorage.setItem('smn_user', JSON.stringify({email, ts: Date.now()}));
+  }
   document.getElementById('nav-login-btn').style.display='none';
   document.getElementById('nav-account-btn').style.display='block';
   const av=document.getElementById('nav-avatar'); if(av) av.textContent=email[0].toUpperCase();
   const dd=document.getElementById('dd-email'); if(dd) dd.textContent=email;
+}
+
+function restoreLogin() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('smn_user')||'null');
+    if(saved && saved.email) {
+      // Auto-login if saved within 30 days
+      const age = Date.now() - (saved.ts||0);
+      if(age < 30 * 24 * 60 * 60 * 1000) {
+        setLoggedIn(saved.email, false);
+      } else {
+        localStorage.removeItem('smn_user');
+      }
+    }
+  } catch(e) {}
 }
 
 // ─── PRICING ───────────────────────────────────────────────
@@ -2131,30 +2165,163 @@ function checkInviteCode() {
   if(!code){showNotif('StreamMN','Урилгын код оруулна уу!');return;}
   showNotif('StreamMN','Урилгын код буруу эсвэл хугацаа дууссан байна.');
 }
-function goToPayment() {
-  if(!selectedPlanEl){showNotif('StreamMN','Хугацаагаа сонгоно уу!');return;}
-  currentTxCode=randCode();
-  document.getElementById('tx-code').textContent=currentTxCode;
-  document.getElementById('pay-amount-display').textContent=selectedPlanAmount.toLocaleString()+'₮';
-  document.getElementById('pay-amount-raw').value=selectedPlanAmount;
-  document.getElementById('pay-status-msg').style.display='none';
-  const cb=document.getElementById('check-btn');
-  cb.disabled=false; cb.style.opacity='1'; cb.textContent=`Гүйлгээ шалгах • ${selectedPlanAmount.toLocaleString()}₮`;
-  document.getElementById('step-plans').style.display='none';
-  document.getElementById('step-payment').style.display='block';
+// ── QPay Configuration (fill in when Khanbank sends credentials) ──
+const QPAY_CONFIG = {
+  username:     '',           // ← Khanbank-аас ирэх
+  password:     '',           // ← Khanbank-аас ирэх
+  invoice_code: '',           // ← Khanbank-аас ирэх
+  apiBase:      'https://merchant.qpay.mn/v2',
+};
+const QPAY_READY = !!(QPAY_CONFIG.username && QPAY_CONFIG.password && QPAY_CONFIG.invoice_code);
+
+function showQPayError() {
+  const box = document.getElementById('qpay-qr-box');
+  box.innerHTML = `<div style="width:200px;height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#555;">
+    <div style="font-size:2rem;">⚠️</div>
+    <div style="font-size:0.75rem;text-align:center;">QR үүсгэхэд алдаа гарлаа.<br/>Удахгүй нэмэгдэнэ.</div>
+  </div>`;
 }
+
+async function qpayGetToken() {
+  const res = await fetch(`${QPAY_CONFIG.apiBase}/auth/token`, {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Basic ' + btoa(`${QPAY_CONFIG.username}:${QPAY_CONFIG.password}`),
+      'Content-Type': 'application/json'
+    }
+  });
+  if(!res.ok) throw new Error('QPay auth failed');
+  const data = await res.json();
+  return data.access_token;
+}
+
+async function qpayCreateInvoice(token, amount, txCode) {
+  const email = isLoggedIn || 'user@streammn.mn';
+  const res = await fetch(`${QPAY_CONFIG.apiBase}/invoice`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      invoice_code:        QPAY_CONFIG.invoice_code,
+      sender_invoice_no:   txCode,
+      invoice_receiver_code: email,
+      invoice_description: `StreamMN гишүүнчлэл - ${selectedPlanName}`,
+      amount:              amount,
+      callback_url:        'https://streammn.mn/qpay/callback'
+    })
+  });
+  if(!res.ok) throw new Error('QPay invoice failed');
+  return await res.json();
+}
+
+async function qpayCheckPayment(token, invoiceId) {
+  const res = await fetch(`${QPAY_CONFIG.apiBase}/payment/check`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ object_type:'INVOICE', object_id: invoiceId })
+  });
+  if(!res.ok) throw new Error('QPay check failed');
+  return await res.json();
+}
+
+let qpayInvoiceId = null;
+let qpayToken = null;
+
+async function goToPayment() {
+  if(!selectedPlanEl){ showNotif('StreamMN','Хугацаагаа сонгоно уу!'); return; }
+  currentTxCode = randCode();
+  document.getElementById('tx-code').textContent = currentTxCode;
+  document.getElementById('pay-amount-display').textContent = selectedPlanAmount.toLocaleString()+'₮';
+  document.getElementById('pay-amount-raw').value = selectedPlanAmount;
+  document.getElementById('pay-status-msg').style.display = 'none';
+  document.getElementById('step-plans').style.display = 'none';
+  document.getElementById('step-payment').style.display = 'block';
+
+  // Update check button
+  const cb = document.getElementById('check-btn');
+  const lbl = document.getElementById('check-btn-label');
+  const amtLbl = document.getElementById('check-amount-label');
+  cb.disabled = false; cb.style.opacity = '1';
+  if(amtLbl) amtLbl.textContent = selectedPlanAmount.toLocaleString()+'₮';
+
+  // Generate QPay QR
+  const loading = document.getElementById('qpay-qr-loading');
+  const img = document.getElementById('qpay-qr-img');
+  if(loading) loading.style.display = 'flex';
+  if(img) img.style.display = 'none';
+
+  if(QPAY_READY) {
+    // Real QPay API
+    try {
+      qpayToken = await qpayGetToken();
+      const invoice = await qpayCreateInvoice(qpayToken, selectedPlanAmount, currentTxCode);
+      qpayInvoiceId = invoice.invoice_id;
+      if(loading) loading.style.display = 'none';
+      if(img){ img.src = `data:image/png;base64,${invoice.qr_image}`; img.style.display = 'block'; }
+    } catch(e) {
+      console.error('QPay error:', e);
+      showQPayError();
+    }
+  } else {
+    // Demo mode — show placeholder QR
+    setTimeout(() => {
+      if(loading) loading.style.display = 'none';
+      const box = document.getElementById('qpay-qr-box');
+      box.innerHTML = `
+        <div style="width:200px;height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:#f8f8f8;border-radius:8px;">
+          <div style="font-size:3rem;">📱</div>
+          <div style="font-size:0.72rem;color:#555;text-align:center;padding:0 12px;">QPay QR энд харагдана<br/><span style="color:#0066ff;font-weight:700;">Удахгүй нэмэгдэнэ</span></div>
+          <div style="font-size:0.65rem;color:#999;text-align:center;">${currentTxCode}</div>
+        </div>`;
+    }, 1200);
+  }
+}
+
 function backToPlans() {
-  document.getElementById('step-plans').style.display='block';
-  document.getElementById('step-payment').style.display='none';
+  document.getElementById('step-plans').style.display = 'block';
+  document.getElementById('step-payment').style.display = 'none';
+  qpayInvoiceId = null;
+  qpayToken = null;
 }
-function doCheckPayment() {
-  const btn=document.getElementById('check-btn');
-  btn.textContent='Шалгаж байна...'; btn.disabled=true; btn.style.opacity='0.7';
-  setTimeout(()=>{
-    document.getElementById('pay-status-msg').style.display='block';
-    btn.textContent=`Дахин шалгах • ${selectedPlanAmount.toLocaleString()}₮`;
-    btn.disabled=false; btn.style.opacity='1';
-  }, 2000);
+
+async function doCheckPayment() {
+  const btn = document.getElementById('check-btn');
+  const lbl = document.getElementById('check-btn-label');
+  btn.disabled = true; btn.style.opacity = '0.7';
+  if(lbl) lbl.innerHTML = '<span style="animation:spin 0.8s linear infinite;display:inline-block;">⟳</span> Шалгаж байна...';
+
+  if(QPAY_READY && qpayToken && qpayInvoiceId) {
+    // Real QPay check
+    try {
+      const result = await qpayCheckPayment(qpayToken, qpayInvoiceId);
+      if(result.count > 0 && result.paid_amount >= selectedPlanAmount) {
+        // Payment confirmed!
+        document.getElementById('pricingModal').style.display = 'none';
+        showNotif('✅ Төлбөр амжилттай!', `${selectedPlanName} идэвхлэгдлээ!`);
+        return;
+      } else {
+        document.getElementById('pay-status-msg').style.display = 'block';
+        btn.disabled = false; btn.style.opacity = '1';
+        if(lbl) lbl.innerHTML = `<span>✓</span> Дахин шалгах · ${selectedPlanAmount.toLocaleString()}₮`;
+      }
+    } catch(e) {
+      document.getElementById('pay-status-msg').style.display = 'block';
+      btn.disabled = false; btn.style.opacity = '1';
+      if(lbl) lbl.innerHTML = `<span>✓</span> Дахин шалгах · ${selectedPlanAmount.toLocaleString()}₮`;
+    }
+  } else {
+    // Demo mode
+    setTimeout(() => {
+      document.getElementById('pay-status-msg').style.display = 'block';
+      btn.disabled = false; btn.style.opacity = '1';
+      if(lbl) lbl.innerHTML = `<span>✓</span> Төлбөр шалгах · <span>${selectedPlanAmount.toLocaleString()}₮</span>`;
+    }, 1500);
+  }
 }
 
 // ─── WATCH CLICK ───────────────────────────────────────────
@@ -2691,8 +2858,8 @@ function checkPwStrength(val) {
 function doLogin() {
   const email=document.getElementById('login-email').value.trim(), pw=document.getElementById('login-pw').value;
   if(!email||!pw){shakeModal();showNotif('Алдаа','Имэйл болон нууц үгээ оруулна уу!');return;}
-  setLoggedIn(email);
-  // If movie is waiting, go straight to player — skip success screen
+  const remember = document.getElementById('remember-check')?.checked !== false;
+  setLoggedIn(email, remember);
   if(currentMovie && currentMovie.id) {
     document.getElementById('loginModal').style.display='none';
     openFullPlayer();
@@ -2706,7 +2873,7 @@ function doRegister() {
   const email=document.getElementById('reg-email').value.trim(), pw=document.getElementById('reg-pw').value, terms=document.getElementById('terms-check').checked;
   if(!email||!pw){shakeModal();showNotif('Алдаа','Бүх талбарыг бөглөнө үү!');return;}
   if(!terms){shakeModal();showNotif('Алдаа','Нөхцөл зөвшөөрөөгүй байна!');return;}
-  setLoggedIn(email);
+  setLoggedIn(email, true);
   if(currentMovie && currentMovie.id) {
     document.getElementById('loginModal').style.display='none';
     openFullPlayer();
@@ -2719,6 +2886,7 @@ function doRegister() {
 function shakeModal() { const b=document.querySelector('#loginModal > div'); b.style.animation='shake 0.4s ease'; setTimeout(()=>b.style.animation='',400); }
 
 // ─── INIT ──────────────────────────────────────────────────
+restoreLogin();
 loadAllRows();
 loadHero();
 </script>
