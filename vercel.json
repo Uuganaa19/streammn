@@ -1,9 +1,11 @@
 {
   "version": 2,
   "builds": [
+    { "src": "api/*.js", "use": "@vercel/node" },
     { "src": "*.html", "use": "@vercel/static" }
   ],
   "routes": [
+    { "src": "/api/(.*)", "dest": "/api/$1" },
     { "src": "/", "dest": "/streamMN.html" },
     { "src": "/admin", "dest": "/streamMN_admin.html" },
     { "src": "/(.*)", "dest": "/$1" }
