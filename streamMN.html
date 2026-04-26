@@ -1483,16 +1483,20 @@ function mkUrl(base) {
 }
 
 const SERVERS = [
-  {name:'Server 1 (VidSrc)',    url: id => mkUrl(`https://vidsrc.me/embed/movie?tmdb=${id}`)},
-  {name:'Server 2 (2Embed)',    url: id => mkUrl(`https://www.2embed.stream/embed/movie/${id}`)},
-  {name:'Server 3 (VidSrc.cc)', url: id => mkUrl(`https://vidsrc.cc/v2/embed/movie/${id}`)},
-  {name:'Server 4 (VidSrc.to)', url: id => mkUrl(`https://vidsrc.to/embed/movie/${id}`)},
+  {name:'Server 1 (VidSrc.cc)',  url: id => mkUrl(`https://vidsrc.cc/v2/embed/movie/${id}`)},
+  {name:'Server 2 (VidSrc.to)',  url: id => mkUrl(`https://vidsrc.to/embed/movie/${id}`)},
+  {name:'Server 3 (2Embed)',     url: id => mkUrl(`https://www.2embed.stream/embed/movie/${id}`)},
+  {name:'Server 4 (AutoEmbed)', url: id => mkUrl(`https://autoembed.co/movie/tmdb/${id}`)},
+  {name:'Server 5 (VidSrc.me)', url: id => mkUrl(`https://vidsrc.me/embed/movie?tmdb=${id}`)},
+  {name:'Server 6 (EmbedSU)',   url: id => mkUrl(`https://embed.su/embed/movie/${id}`)},
 ];
 const TV_SERVERS = [
-  {name:'Server 1 (VidSrc)',    url: (id,s,e) => mkUrl(`https://vidsrc.me/embed/tv?tmdb=${id}&season=${s}&episode=${e}`)},
-  {name:'Server 2 (2Embed)',    url: (id,s,e) => mkUrl(`https://www.2embed.stream/embed/tv/${id}/${s}/${e}`)},
-  {name:'Server 3 (VidSrc.cc)', url: (id,s,e) => mkUrl(`https://vidsrc.cc/v2/embed/tv/${id}/${s}/${e}`)},
-  {name:'Server 4 (VidSrc.to)', url: (id,s,e) => mkUrl(`https://vidsrc.to/embed/tv/${id}/${s}/${e}`)},
+  {name:'Server 1 (VidSrc.cc)',  url: (id,s,e) => mkUrl(`https://vidsrc.cc/v2/embed/tv/${id}/${s}/${e}`)},
+  {name:'Server 2 (VidSrc.to)',  url: (id,s,e) => mkUrl(`https://vidsrc.to/embed/tv/${id}/${s}/${e}`)},
+  {name:'Server 3 (2Embed)',     url: (id,s,e) => mkUrl(`https://www.2embed.stream/embed/tv/${id}/${s}/${e}`)},
+  {name:'Server 4 (AutoEmbed)', url: (id,s,e) => mkUrl(`https://autoembed.co/tv/tmdb/${id}-${s}-${e}`)},
+  {name:'Server 5 (VidSrc.me)', url: (id,s,e) => mkUrl(`https://vidsrc.me/embed/tv?tmdb=${id}&season=${s}&episode=${e}`)},
+  {name:'Server 6 (EmbedSU)',   url: (id,s,e) => mkUrl(`https://embed.su/embed/tv/${id}/${s}/${e}`)},
 ];
 
 let heroMovies = [], heroIndex = 0, heroTimer = null;
@@ -2615,8 +2619,16 @@ const UNAVAILABLE_PHRASES = [
   'this media is unavailable',
   'not available',
   'video not found',
+  'media not found',
   '404',
   'error loading',
+  'stream not found',
+  'no stream',
+  'something went wrong',
+  'failed to load',
+  'cannot be played',
+  'content unavailable',
+  'sorry',
 ];
 
 function onIframeLoad(iframe) {
@@ -2626,7 +2638,7 @@ function onIframeLoad(iframe) {
   // Check after 4s if content loaded or failed
   iframeCheckTimer = setTimeout(() => {
     checkIframeContent(iframe);
-  }, 4000);
+  }, 2500);
 }
 
 function checkIframeContent(iframe) {
