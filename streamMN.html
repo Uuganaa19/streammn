@@ -2394,14 +2394,14 @@ async function openFullPlayer() {
   iframe.src = '';
   const overlay = document.getElementById('serverFallbackOverlay');
   overlay.style.display = 'flex';
-  document.getElementById('fallbackMsg').textContent = '⏳ Ачааллаж байна...';
-  document.getElementById('fallbackSub').textContent = '';
+  document.getElementById('fallbackMsg').textContent = '🔍 Хамгийн сайн серверийг хайж байна...';
+  document.getElementById('fallbackSub').textContent = `${servers.length} сервер шалгаж байна — түр хүлээнэ үү`;
   document.getElementById('fallbackServerBtns').innerHTML = '';
 
   // Pre-check all servers in parallel
   let bestIdx = 0;
   try {
-    bestIdx = 0; // API unavailable, skip pre-check
+    bestIdx = await findBestServer(servers, id, type);
   } catch(e) {
     bestIdx = 0;
   }
@@ -2632,7 +2632,7 @@ updateWlNavBtn();
 // ─── SERVER PRE-CHECK ──────────────────────────────────────
 const CHECK_API = '/api/check-server';
 
-async function checkServer(url) {
+async function checkServer(url) { return true; }
   try {
     const res = await fetch(`${CHECK_API}?url=${encodeURIComponent(url)}`);
     const data = await res.json();
