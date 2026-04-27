@@ -2394,14 +2394,14 @@ async function openFullPlayer() {
   iframe.src = '';
   const overlay = document.getElementById('serverFallbackOverlay');
   overlay.style.display = 'flex';
-  document.getElementById('fallbackMsg').textContent = '🔍 Хамгийн сайн серверийг хайж байна...';
-  document.getElementById('fallbackSub').textContent = `${servers.length} сервер шалгаж байна — түр хүлээнэ үү`;
+  document.getElementById('fallbackMsg').textContent = '⏳ Ачааллаж байна...';
+  document.getElementById('fallbackSub').textContent = '';
   document.getElementById('fallbackServerBtns').innerHTML = '';
 
   // Pre-check all servers in parallel
   let bestIdx = 0;
   try {
-    bestIdx = await findBestServer(servers, id, type);
+    bestIdx = 0; // API unavailable, skip pre-check
   } catch(e) {
     bestIdx = 0;
   }
