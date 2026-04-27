@@ -1661,12 +1661,7 @@ function buildTop10(results) {
 window.open = function() { return null; };
 
 // Block all navigation attempts from iframes
-function preventPopup() {
-  setTimeout(() => {
-    // Close any new tabs opened by the iframe
-    window.focus();
-  }, 50);
-}
+
 
 // Block beforeunload redirects from embed servers
 window.addEventListener('beforeunload', e => {
