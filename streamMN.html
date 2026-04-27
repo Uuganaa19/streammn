@@ -2625,6 +2625,8 @@ document.addEventListener('keydown', e => {
 // Init watchlist nav button
 updateWlNavBtn();
 // ─── SERVER PRE-CHECK ──────────────────────────────────────
+const CHECK_API = '/api/check-server';
+
 async function checkServer(url) {
   return true; // API unavailable, skip pre-check
 }
