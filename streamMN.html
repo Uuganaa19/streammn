@@ -1482,7 +1482,7 @@ function mkUrl(base) {
 }
 
 const SERVERS = [
-  {name:'Server 1',  url: id => `https://vidcore.net/movie/${id}`},
+  {name:'Server 1',  url: id => `https://streammn-scraper.uugankhuu.workers.dev/?tmdb=${id}&type=movie`},
   {name:'Server 2',  url: id => mkUrl(`https://embed.su/embed/movie/${id}`)},
   {name:'Server 3',  url: id => mkUrl(`https://autoembed.co/movie/tmdb/${id}`)},
   {name:'Server 4',  url: id => mkUrl(`https://www.2embed.stream/embed/movie/${id}`)},
