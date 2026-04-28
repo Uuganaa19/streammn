@@ -1278,7 +1278,7 @@ input:checked + .sw::after{transform:translateX(20px);}
   </div>
 
   <!-- IFRAME — takes full space, z-index 1 so controls overlay it -->
-  <iframe id="fullPlayerIframe"
+  <iframe id="fullPlayerIframe" sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
     allowfullscreen
     allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
     referrerpolicy="no-referrer"
@@ -1482,20 +1482,20 @@ function mkUrl(base) {
 }
 
 const SERVERS = [
-  {name:'Server 1',  url: id => `https://vidcore.net/movie/${id}`},
-  {name:'Server 2',  url: id => mkUrl(`https://vidsrc.to/embed/movie/${id}`)},
+  {name:'Server 1',  url: id => mkUrl(`https://autoembed.co/movie/tmdb/${id}`)},
+  {name:'Server 2',  url: id => mkUrl(`https://embed.su/embed/movie/${id}`)},
   {name:'Server 3',     url: id => mkUrl(`https://www.2embed.stream/embed/movie/${id}`)},
-  {name:'Server 4', url: id => mkUrl(`https://autoembed.co/movie/tmdb/${id}`)},
+  {name:'Server 4', url: id => mkUrl(`https://vidsrc.to/embed/movie/${id}`)},
   {name:'Server 5', url: id => mkUrl(`https://vidsrc.me/embed/movie?tmdb=${id}`)},
-  {name:'Server 6',   url: id => mkUrl(`https://embed.su/embed/movie/${id}`)},
+  {name:'Server 6',   url: id => mkUrl(`https://vidsrc.cc/v2/embed/movie/${id}`)},
 ];
 const TV_SERVERS = [
-  {name:'Server 1',  url: (id,s,e) => `https://vidcore.net/tv/${id}/${s}/${e}`},
-  {name:'Server 2',  url: (id,s,e) => mkUrl(`https://vidsrc.to/embed/tv/${id}/${s}/${e}`)},
+  {name:'Server 1',  url: (id,s,e) => mkUrl(`https://autoembed.co/tv/tmdb/${id}-${s}-${e}`)},
+  {name:'Server 2',  url: (id,s,e) => mkUrl(`https://embed.su/embed/tv/${id}/${s}/${e}`)},
   {name:'Server 3',     url: (id,s,e) => mkUrl(`https://www.2embed.stream/embed/tv/${id}/${s}/${e}`)},
-  {name:'Server 4', url: (id,s,e) => mkUrl(`https://autoembed.co/tv/tmdb/${id}-${s}-${e}`)},
+  {name:'Server 4', url: (id,s,e) => mkUrl(`https://vidsrc.to/embed/tv/${id}/${s}/${e}`)},
   {name:'Server 5', url: (id,s,e) => mkUrl(`https://vidsrc.me/embed/tv?tmdb=${id}&season=${s}&episode=${e}`)},
-  {name:'Server 6',   url: (id,s,e) => mkUrl(`https://embed.su/embed/tv/${id}/${s}/${e}`)},
+  {name:'Server 6',   url: (id,s,e) => mkUrl(`https://vidsrc.cc/v2/embed/tv/${id}/${s}/${e}`)},
 ];
 
 let heroMovies = [], heroIndex = 0, heroTimer = null;
@@ -1657,30 +1657,7 @@ function buildTop10(results) {
 
 // ─── FETCH HELPERS ─────────────────────────────────────────
 // ─── BLOCK ALL POPUPS / NEW TAB REDIRECTS ──────────────────
-window.open = () => null;
-
-// Block ALL top-level navigation from iframes
-window.addEventListener('beforeunload', e => {
-  if(document.getElementById('playerPage')?.style.display !== 'none') {
-    e.preventDefault(); e.returnValue = ''; return '';
-  }
-});
-
-// Override location setter to block redirects
-(function() {
-  let _blocked = false;
-  const _desc = Object.getOwnPropertyDescriptor(window, 'location');
-  window.addEventListener('click', function(e) {
-    const a = e.target.closest('a[href]');
-    if(!a) return;
-    const href = a.href || '';
-    const BLOCKED = ['1xbet','melbet','betway','bet365','csgo-skins','stake.com',
-                     'bc.game','bspin','roobet','rollbit','gamdom','windice'];
-    if(BLOCKED.some(b => href.includes(b))) {
-      e.preventDefault(); e.stopImmediatePropagation();
-    }
-  }, true);
-})();
+window.open = function() { return null; };
 
 // Block all navigation attempts from iframes
 
@@ -2982,35 +2959,6 @@ function doRegister() {
   }
 }
 function shakeModal() { const b=document.querySelector('#loginModal > div'); b.style.animation='shake 0.4s ease'; setTimeout(()=>b.style.animation='',400); }
-
-
-// ── POPUP / NEW-TAB BLOCKER ─────────────────────────────────
-// Block window.open globally
-window.open = () => null;
-
-// Block new tab attempts from iframes via postMessage or click
-document.addEventListener('click', e => {
-  const a = e.target.closest('a');
-  if (a && (a.target === '_blank' || a.getAttribute('target') === '_blank')) {
-    const href = a.href || '';
-    // Only block if it's not a same-origin link
-    if (!href.startsWith(window.location.origin)) {
-      e.preventDefault();
-      e.stopImmediatePropagation();
-    }
-  }
-}, true);
-
-// Re-inject window.open=null into iframe every second
-setInterval(() => {
-  const iframe = document.getElementById('fullPlayerIframe');
-  if (!iframe) return;
-  try {
-    if (iframe.contentWindow) {
-      iframe.contentWindow.open = () => null;
-    }
-  } catch(e) {}
-}, 1000);
 
 // ─── INIT ──────────────────────────────────────────────────
 restoreLogin();
