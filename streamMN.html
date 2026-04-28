@@ -1483,19 +1483,19 @@ function mkUrl(base) {
 
 const SERVERS = [
   {name:'Server 1',  url: id => `https://streammn-scraper.uugankhuu.workers.dev/?tmdb=${id}&type=movie`},
-  {name:'Server 2',  url: id => mkUrl(`https://embed.su/embed/movie/${id}`)},
-  {name:'Server 3',  url: id => mkUrl(`https://autoembed.co/movie/tmdb/${id}`)},
-  {name:'Server 4',  url: id => mkUrl(`https://www.2embed.stream/embed/movie/${id}`)},
+  {name:'Server 2',  url: id => `https://vidcore.net/movie/${id}`},
+  {name:'Server 3',     url: id => mkUrl(`https://www.2embed.stream/embed/movie/${id}`)},
+  {name:'Server 4', url: id => mkUrl(`https://autoembed.co/movie/tmdb/${id}`)},
   {name:'Server 5', url: id => mkUrl(`https://vidsrc.me/embed/movie?tmdb=${id}`)},
-  {name:'Server 6',  url: id => mkUrl(`https://vidsrc.cc/v2/embed/movie/${id}`)},
+  {name:'Server 6',   url: id => mkUrl(`https://embed.su/embed/movie/${id}`)},
 ];
 const TV_SERVERS = [
-  {name:'Server 1',  url: (id,s,e) => `https://vidcore.net/tv/${id}/${s}/${e}`},
-  {name:'Server 2',  url: (id,s,e) => mkUrl(`https://embed.su/embed/tv/${id}/${s}/${e}`)},
-  {name:'Server 3',  url: (id,s,e) => mkUrl(`https://autoembed.co/tv/tmdb/${id}-${s}-${e}`)},
-  {name:'Server 4',  url: (id,s,e) => mkUrl(`https://www.2embed.stream/embed/tv/${id}/${s}/${e}`)},
+  {name:'Server 1',  url: (id,s,e) => `https://streammn-scraper.uugankhuu.workers.dev/?tmdb=${id}&type=tv&s=${s}&e=${e}`},
+  {name:'Server 2',  url: (id,s,e) => `https://vidcore.net/tv/${id}/${s}/${e}`},
+  {name:'Server 3',     url: (id,s,e) => mkUrl(`https://www.2embed.stream/embed/tv/${id}/${s}/${e}`)},
+  {name:'Server 4', url: (id,s,e) => mkUrl(`https://autoembed.co/tv/tmdb/${id}-${s}-${e}`)},
   {name:'Server 5', url: (id,s,e) => mkUrl(`https://vidsrc.me/embed/tv?tmdb=${id}&season=${s}&episode=${e}`)},
-  {name:'Server 6',  url: (id,s,e) => mkUrl(`https://vidsrc.cc/v2/embed/tv/${id}/${s}/${e}`)},
+  {name:'Server 6',   url: (id,s,e) => mkUrl(`https://embed.su/embed/tv/${id}/${s}/${e}`)},
 ];
 
 let heroMovies = [], heroIndex = 0, heroTimer = null;
