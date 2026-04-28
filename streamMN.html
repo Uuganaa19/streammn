@@ -1657,7 +1657,30 @@ function buildTop10(results) {
 
 // ─── FETCH HELPERS ─────────────────────────────────────────
 // ─── BLOCK ALL POPUPS / NEW TAB REDIRECTS ──────────────────
-window.open = function() { return null; };
+window.open = () => null;
+
+// Block ALL top-level navigation from iframes
+window.addEventListener('beforeunload', e => {
+  if(document.getElementById('playerPage')?.style.display !== 'none') {
+    e.preventDefault(); e.returnValue = ''; return '';
+  }
+});
+
+// Override location setter to block redirects
+(function() {
+  let _blocked = false;
+  const _desc = Object.getOwnPropertyDescriptor(window, 'location');
+  window.addEventListener('click', function(e) {
+    const a = e.target.closest('a[href]');
+    if(!a) return;
+    const href = a.href || '';
+    const BLOCKED = ['1xbet','melbet','betway','bet365','csgo-skins','stake.com',
+                     'bc.game','bspin','roobet','rollbit','gamdom','windice'];
+    if(BLOCKED.some(b => href.includes(b))) {
+      e.preventDefault(); e.stopImmediatePropagation();
+    }
+  }, true);
+})();
 
 // Block all navigation attempts from iframes
 
