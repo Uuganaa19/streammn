@@ -9,5 +9,14 @@
     { "src": "/", "dest": "/streamMN.html" },
     { "src": "/admin", "dest": "/streamMN_admin.html" },
     { "src": "/(.*)", "dest": "/$1" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
+        { "key": "Content-Security-Policy", "value": "frame-ancestors 'self'" }
+      ]
+    }
   ]
 }
