@@ -1281,7 +1281,6 @@ input:checked + .sw::after{transform:translateX(20px);}
   <iframe id="fullPlayerIframe"
     allowfullscreen
     allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
-    sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-popups"
     referrerpolicy="no-referrer"
     style="position:absolute;inset:0;width:100%;height:100%;border:none;z-index:1;"
     onload="onIframeLoad(this)">
@@ -1483,7 +1482,7 @@ function mkUrl(base) {
 }
 
 const SERVERS = [
-  {name:'Server 1',  url: id => `https://multiembed.mov/?video_id=${id}&tmdb=1`},
+  {name:'Server 1',  url: id => `https://multiembed.mov/directstream.php?video_id=${id}&tmdb=1`},
   {name:'Server 2',  url: id => mkUrl(`https://vidsrc.cc/v2/embed/movie/${id}`)},
   {name:'Server 3',     url: id => mkUrl(`https://www.2embed.stream/embed/movie/${id}`)},
   {name:'Server 4', url: id => mkUrl(`https://autoembed.co/movie/tmdb/${id}`)},
@@ -1491,7 +1490,7 @@ const SERVERS = [
   {name:'Server 6',   url: id => mkUrl(`https://embed.su/embed/movie/${id}`)},
 ];
 const TV_SERVERS = [
-  {name:'Server 1',  url: (id,s,e) => `https://multiembed.mov/?video_id=${id}&tmdb=1&s=${s}&e=${e}`},
+  {name:'Server 1',  url: (id,s,e) => `https://multiembed.mov/directstream.php?video_id=${id}&tmdb=1&s=${s}&e=${e}`},
   {name:'Server 2',  url: (id,s,e) => mkUrl(`https://vidsrc.cc/v2/embed/tv/${id}/${s}/${e}`)},
   {name:'Server 3',     url: (id,s,e) => mkUrl(`https://www.2embed.stream/embed/tv/${id}/${s}/${e}`)},
   {name:'Server 4', url: (id,s,e) => mkUrl(`https://autoembed.co/tv/tmdb/${id}-${s}-${e}`)},
@@ -1658,16 +1657,7 @@ function buildTop10(results) {
 
 // ─── FETCH HELPERS ─────────────────────────────────────────
 // ─── BLOCK ALL POPUPS / NEW TAB REDIRECTS ──────────────────
-window.open = function(url) { 
-  // Block betting/gambling sites
-  const blocked = ['1xbet','melbet','betway','bet365','csgo-skins','stake','bc.game'];
-  if(url && blocked.some(b => url.includes(b))) return null;
-  return null; // block ALL popups from embeds
-};
-// Block iframe navigation attempts
-window.addEventListener('message', function(e) {
-  if(e.data && typeof e.data === 'string' && e.data.includes('navigate')) return;
-});
+window.open = function() { return null; };
 
 // Block all navigation attempts from iframes
 
