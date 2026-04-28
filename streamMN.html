@@ -1278,7 +1278,7 @@ input:checked + .sw::after{transform:translateX(20px);}
   </div>
 
   <!-- IFRAME — takes full space, z-index 1 so controls overlay it -->
-  <iframe id="fullPlayerIframe" sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
+  <iframe id="fullPlayerIframe"
     allowfullscreen
     allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
     referrerpolicy="no-referrer"
@@ -2982,6 +2982,35 @@ function doRegister() {
   }
 }
 function shakeModal() { const b=document.querySelector('#loginModal > div'); b.style.animation='shake 0.4s ease'; setTimeout(()=>b.style.animation='',400); }
+
+
+// ── POPUP / NEW-TAB BLOCKER ─────────────────────────────────
+// Block window.open globally
+window.open = () => null;
+
+// Block new tab attempts from iframes via postMessage or click
+document.addEventListener('click', e => {
+  const a = e.target.closest('a');
+  if (a && (a.target === '_blank' || a.getAttribute('target') === '_blank')) {
+    const href = a.href || '';
+    // Only block if it's not a same-origin link
+    if (!href.startsWith(window.location.origin)) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    }
+  }
+}, true);
+
+// Re-inject window.open=null into iframe every second
+setInterval(() => {
+  const iframe = document.getElementById('fullPlayerIframe');
+  if (!iframe) return;
+  try {
+    if (iframe.contentWindow) {
+      iframe.contentWindow.open = () => null;
+    }
+  } catch(e) {}
+}, 1000);
 
 // ─── INIT ──────────────────────────────────────────────────
 restoreLogin();
